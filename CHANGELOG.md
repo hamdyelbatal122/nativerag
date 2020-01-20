@@ -69,3 +69,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Full `config/nativerag.php` with env-driven driver, chunking, memory, and encryption options.
 - `LICENSE.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`.
 - GitHub Actions CI workflow.
+- [2020-01-20]: refactor: optimize vector database embedding queries
