@@ -71,3 +71,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - GitHub Actions CI workflow.
 - [2020-01-20]: refactor: optimize vector database embedding queries
 - [2020-02-01]: docs: clarify local model setup steps in README
+- [2020-02-13]: chore: update composer dependencies for laravel
