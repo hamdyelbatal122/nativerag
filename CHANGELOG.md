@@ -73,3 +73,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2020-02-01]: docs: clarify local model setup steps in README
 - [2020-02-13]: chore: update composer dependencies for laravel
 - [2020-02-25]: style: format search index controller helpers
+- [2020-03-05]: docs: document index pipeline execution rules
