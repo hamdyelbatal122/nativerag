@@ -75,3 +75,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2020-02-25]: style: format search index controller helpers
 - [2020-03-05]: docs: document index pipeline execution rules
 - [2020-03-14]: refactor: simplify query parsing logic
+- [2020-03-26]: fix: correct prompt builder variable bindings
