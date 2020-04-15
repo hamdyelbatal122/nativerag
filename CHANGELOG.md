@@ -77,3 +77,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2020-03-14]: refactor: simplify query parsing logic
 - [2020-03-26]: fix: correct prompt builder variable bindings
 - [2020-04-04]: docs: document custom prompt templates usage
+- [2020-04-15]: chore: configure default embedding dimensions
