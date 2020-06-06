@@ -82,3 +82,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2020-05-06]: style: improve terminal indexing feedback layout
 - [2020-05-16]: docs: add hardware acceleration guide
 - [2020-05-27]: chore: update security rules in database guides
+- [2020-06-06]: refactor: optimize search score calculations
