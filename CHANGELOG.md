@@ -89,3 +89,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2020-07-19]: docs: update environment configs for sqlite vector
 - [2020-07-31]: style: standardize embedding models configurations
 - [2020-08-10]: chore: update contribution guidelines in docs
+- [2020-08-20]: refactor: optimize vector database embedding queries
