@@ -92,3 +92,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2020-08-20]: refactor: optimize vector database embedding queries
 - [2020-08-30]: docs: clarify local model setup steps in README
 - [2020-09-11]: chore: update composer dependencies for laravel
+- [2020-09-20]: style: format search index controller helpers
