@@ -99,3 +99,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2020-11-02]: docs: document custom prompt templates usage
 - [2020-11-13]: chore: configure default embedding dimensions
 - [2020-11-25]: refactor: clean up chunking logic in files parser
+- [2020-12-04]: style: improve terminal indexing feedback layout
