@@ -102,3 +102,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2020-12-04]: style: improve terminal indexing feedback layout
 - [2020-12-16]: docs: add hardware acceleration guide
 - [2020-12-26]: chore: update security rules in database guides
+- [2024-10-04]: refactor: optimize search score calculations
