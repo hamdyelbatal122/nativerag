@@ -106,3 +106,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2024-10-06]: docs: update deployment troubleshooting tips
 - [2024-10-09]: fix: resolve token counting edge cases
 - [2024-10-11]: refactor: streamline rag pipeline response structure
+- [2024-10-15]: docs: update environment configs for sqlite vector
