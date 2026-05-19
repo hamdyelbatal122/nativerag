@@ -32,10 +32,10 @@ class VectorSearchEngine
      * Portable mathematical calculation pulling embeddings into a lazy collection and scoring via PHP.
      * Extremely compatible across any database driver (SQLite, MySQL, SQL Server) without special extensions.
      *
-     * @param array<float> $queryEmbedding
-     * @return \Illuminate\Support\Collection<int, \Hamzi\NativeRag\Models\NativeRagEmbedding>
+     * @param  array<float>  $queryEmbedding
+     * @return Collection<int, NativeRagEmbedding>
      */
-    protected function searchViaCollection(array $queryEmbedding, int $limit, float $minScore): \Illuminate\Support\Collection
+    protected function searchViaCollection(array $queryEmbedding, int $limit, float $minScore): Collection
     {
         $results = collect();
 
@@ -64,10 +64,10 @@ class VectorSearchEngine
      * Requires the DB engine to support JSON array extraction or relies on pgvector if configured.
      * We use a unified fallback that delegates to the collection approach if SQL math is too complex for the active driver.
      *
-     * @param array<float> $queryEmbedding
-     * @return \Illuminate\Support\Collection<int, \Hamzi\NativeRag\Models\NativeRagEmbedding>
+     * @param  array<float>  $queryEmbedding
+     * @return Collection<int, NativeRagEmbedding>
      */
-    protected function searchViaDatabase(array $queryEmbedding, int $limit, float $minScore): \Illuminate\Support\Collection
+    protected function searchViaDatabase(array $queryEmbedding, int $limit, float $minScore): Collection
     {
         $connection = DB::connection(config('nativerag.embeddings.connection'));
         $driver = $connection->getDriverName();
@@ -77,7 +77,7 @@ class VectorSearchEngine
             $vectorStr = '['.implode(',', $queryEmbedding).']';
 
             try {
-                /** @var \Illuminate\Support\Collection<int, \Hamzi\NativeRag\Models\NativeRagEmbedding> $results */
+                /** @var Collection<int, NativeRagEmbedding> $results */
                 $results = NativeRagEmbedding::query()
                     // 1 - (embedding <=> query) = cosine similarity in pgvector
                     ->selectRaw('*, 1 - (embedding <=> ?) as similarity', [$vectorStr])
@@ -85,7 +85,7 @@ class VectorSearchEngine
                     ->orderByDesc('similarity')
                     ->limit($limit)
                     ->get();
-                    
+
                 return $results;
             } catch (\Exception $e) {
                 // Fallback to PHP computation if pgvector extension is missing
@@ -104,8 +104,8 @@ class VectorSearchEngine
      * Compute Cosine Similarity between two arrays of floats.
      * Returns a score between -1.0 and 1.0 (1.0 meaning exact match).
      *
-     * @param array<float> $a
-     * @param array<float> $b
+     * @param  array<float>  $a
+     * @param  array<float>  $b
      */
     protected function cosineSimilarity(array $a, array $b): float
     {

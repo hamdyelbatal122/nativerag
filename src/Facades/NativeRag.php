@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Hamzi\NativeRag\Contracts\EmbeddingEngineContract embedding()
  * @method static \Hamzi\NativeRag\Contracts\ChatEngineContract driver(?string $driver = null)
  *
- * @see \Hamzi\NativeRag\NativeRagManager
+ * @see NativeRagManager
  */
 class NativeRag extends Facade
 {
