@@ -1,24 +1,40 @@
 {
     "name": "hamzi/nativerag",
-    "description": "Native Local AI Controller and Retrieval-Augmented Generation (RAG) engine designed specifically for Laravel 11+.",
+    "description": "A production-ready, privacy-first Local AI Controller and Retrieval-Augmented Generation (RAG) engine for Laravel 11, 12, and 13. Supports Ollama, LM Studio, zero-infra vector search, SSE streaming, and full conversational memory — all with 100% data residency.",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "laravel",
+        "ai",
+        "rag",
+        "llm",
+        "ollama",
+        "lmstudio",
+        "vector-search",
+        "embedding",
+        "local-ai",
+        "php"
+    ],
+    "homepage": "https://github.com/hamdyelbatal122/nativerag",
     "authors": [
         {
-            "name": "Hamzi",
-            "email": "hamzi@example.com"
+            "name": "Hamdy Elbatal",
+            "email": "hamdyelbatal@hamzi.dev",
+            "role": "Developer"
         }
     ],
     "require": {
         "php": "^8.2",
-        "illuminate/support": "^11.0",
-        "illuminate/database": "^11.0",
-        "illuminate/http": "^11.0",
+        "illuminate/support": "^11.0|^12.0|^13.0",
+        "illuminate/database": "^11.0|^12.0|^13.0",
+        "illuminate/http": "^11.0|^12.0|^13.0",
         "symfony/http-foundation": "^7.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^9.0",
-        "phpunit/phpunit": "^10.0"
+        "orchestra/testbench": "^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0",
+        "phpstan/phpstan": "^2.0",
+        "laravel/pint": "^1.0"
     },
     "autoload": {
         "psr-4": {
@@ -30,6 +46,11 @@
             "Hamzi\\NativeRag\\Tests\\": "tests/"
         }
     },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "lint": "vendor/bin/pint",
+        "analyse": "vendor/bin/phpstan analyse --memory-limit=512M"
+    },
     "extra": {
         "laravel": {
             "providers": [
@@ -39,6 +60,9 @@
                 "NativeRag": "Hamzi\\NativeRag\\Facades\\NativeRag"
             }
         }
+    },
+    "config": {
+        "sort-packages": true
     },
     "minimum-stability": "dev",
     "prefer-stable": true

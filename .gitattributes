@@ -3,13 +3,18 @@
 *.php text eol=lf
 *.json text eol=lf
 *.md text eol=lf
+*.yml text eol=lf
+*.neon text eol=lf
+*.xml text eol=lf
 
-# Exclude specific files from the composer distribution
+# Exclude development files from Composer dist package
 /.github export-ignore
 /tests export-ignore
 /.gitattributes export-ignore
 /.gitignore export-ignore
 /phpunit.xml export-ignore
 /phpstan.neon export-ignore
+/pint.json export-ignore
 /SECURITY.md export-ignore
 /CONTRIBUTING.md export-ignore
+/CHANGELOG.md export-ignore
