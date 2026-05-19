@@ -1,0 +1,15 @@
+* text=auto
+
+*.php text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Exclude specific files from the composer distribution
+/.github export-ignore
+/tests export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/phpunit.xml export-ignore
+/phpstan.neon export-ignore
+/SECURITY.md export-ignore
+/CONTRIBUTING.md export-ignore

@@ -1,62 +1,113 @@
-# Laravel NativeRAG 🧠
+<p align="center">
+    <h1 align="center">Laravel NativeRAG 🧠</h1>
+</p>
 
-**A world-class, production-ready, and highly secure local AI controller and Retrieval-Augmented Generation (RAG) engine designed strictly for Laravel 11+.**
+<p align="center">
+    <strong>A world-class, production-ready Local AI & RAG Engine for Laravel 11+</strong>
+</p>
 
-Laravel NativeRAG allows developers to run localized, privacy-first AI workflows via models hosted in **Ollama** or **LM Studio**, delivering **100% data residency** and **zero external cloud dependencies**, backed by an elegant and fluent Laravel native Developer Experience (DX).
+<p align="center">
+    <a href="https://packagist.org/packages/hamzi/nativerag"><img src="https://img.shields.io/packagist/v/hamzi/nativerag.svg?style=flat-square&color=blue" alt="Latest Version on Packagist"></a>
+    <a href="https://github.com/hamzi/nativerag/actions"><img src="https://img.shields.io/github/actions/workflow/status/hamzi/nativerag/run-tests.yml?branch=main&label=tests&style=flat-square" alt="GitHub Tests Action Status"></a>
+    <a href="https://packagist.org/packages/hamzi/nativerag"><img src="https://img.shields.io/packagist/dt/hamzi/nativerag.svg?style=flat-square" alt="Total Downloads"></a>
+    <a href="https://packagist.org/packages/hamzi/nativerag"><img src="https://img.shields.io/packagist/php-v/hamzi/nativerag.svg?style=flat-square" alt="PHP Version Requirement"></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-success.svg?style=flat-square" alt="License"></a>
+</p>
 
 ---
 
-## 🔥 Features
+Laravel NativeRAG empowers developers to run **localized, privacy-first AI workflows** using models hosted in [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/). 
 
-- **Multi-Driver LLM Support:** Seamlessly switch between local Ollama and LM Studio endpoints using Laravel's fluent gateway `Manager` pattern.
-- **Zero-Infra Vector Search:** Eliminate the need for costly external vector databases like Pinecone. Uses highly optimized Cosine Similarity matrix calculations in pure PHP memory, with raw SQL query fallback capabilities optimized directly for MySQL, PostgreSQL (`pgvector`), or SQLite.
-- **Native SSE Streaming Layer:** Implements PSR-compliant chunked transfer encoding `StreamedResponse`, perfect for reactive real-time frontend streaming via Alpine.js or Livewire without blocking or lagging.
-- **Automated Text Chunking & Hashing:** Attach the `Embeddable` trait to any Eloquent model to automatically hook into Model Observers. Long documents are automatically broken down into overlapping context chunks, preventing token truncation while hashing content to completely eliminate redundant embedding API calls.
-- **Persistent AI Memory:** Out-of-the-box automated SQL database tables for full Multi-Turn Chat persistence. Features token-aware, sliding-window message pruning and payload encryption to secure sensitive metadata.
+Built specifically for the Laravel ecosystem, it guarantees **100% data residency**, **zero external cloud dependencies** (no OpenAI API keys needed), and a seamless, highly fluent Developer Experience (DX).
+
+## ✨ Features at a Glance
+
+- 🤖 **Multi-Driver LLM Support:** Switch between Ollama and LM Studio endpoints instantly using Laravel's fluent gateway Manager pattern.
+- 🗄️ **"Zero-Infra" Vector Search:** Eliminate the need for costly external vector databases like Pinecone. Utilizes highly optimized Cosine Similarity matrix calculations directly in PHP memory, with raw SQL query fallback capabilities optimized for MySQL, PostgreSQL (`pgvector`), or SQLite.
+- ⚡ **Native SSE Streaming Layer:** Implements PSR-compliant chunked transfer encoding (`StreamedResponse`), allowing flawless real-time reactive frontend streaming via Alpine.js or Livewire.
+- 🧩 **Automated Text Chunking & Hashing:** Attach the `Embeddable` trait to any Eloquent model. The package automatically listens to model saves, breaks documents down into overlapping context chunks, and calculates MD5 hashes to prevent redundant API calls.
+- 🧠 **Persistent AI Memory:** Out-of-the-box SQL tables for multi-turn chat persistence. Includes intelligent sliding-window message pruning and payload encryption to secure sensitive metadata.
+- 🛡️ **Enterprise Security & Architecture:** Engineered strictly with PHP 8.2+ (`declare(strict_types=1)`), constructor promotion, Readonly DTOs, and Laravel 11.x best practices.
 
 ---
 
-## 📦 Installation
+## 🚀 Installation
 
-Since this package is local, ensure your repository has it wired up, then run:
+Install the package via Composer:
 
 ```bash
 composer require hamzi/nativerag
 ```
 
-Publish the package configuration and zero-infra migrations:
+Publish the configuration file and database migrations:
 
 ```bash
 php artisan vendor:publish --tag="nativerag-config"
 php artisan vendor:publish --tag="nativerag-migrations"
+```
+
+Run the migrations to create the RAG embeddings and conversations tables:
+
+```bash
 php artisan migrate
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## 🛠️ Configuration
 
-### 1. Simple Completions
+After publishing, examine the `config/nativerag.php` file. You can easily modify your default driver, endpoints, and timeouts using environment variables in your `.env`:
 
-Use the robust Facade to interact directly with your local LLM driver:
+```env
+NATIVE_RAG_DRIVER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_CHAT_MODEL=llama3
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+NATIVE_RAG_CHUNK_SIZE=1000
+NATIVE_RAG_CHUNK_OVERLAP=200
+```
+
+---
+
+## 📖 Usage Guide
+
+### 1. Simple AI Completions
+
+Interact directly with your local LLM driver using the elegant Facade. All responses are returned as a strongly-typed `ChatResponse` DTO for perfect IDE autocomplete.
 
 ```php
 use Hamzi\NativeRag\Facades\NativeRag;
 
 $response = NativeRag::chat([
-    ['role' => 'system', 'content' => 'You are a helpful assistant.'],
-    ['role' => 'user', 'content' => 'Explain quantum computing in one sentence.']
+    ['role' => 'system', 'content' => 'You are a senior PHP developer.'],
+    ['role' => 'user', 'content' => 'Explain Laravel service containers in one sentence.']
 ]);
 
 echo $response->content; 
-// The response is wrapped in a strongly-typed `ChatResponse` DTO for perfect IDE autocomplete.
 ```
 
-### 2. Zero-Infra Model Embeddings
+### 2. Reactive SSE Streaming (Real-Time Generation)
 
-Simply attach the `Embeddable` trait to any Eloquent model. The package automatically listens to model saves, chunks the text, and calculates local embeddings via Ollama.
+Send tokens to the browser in real-time as your local GPU/CPU generates them. Perfect for creating ChatGPT-like typing effects natively.
 
 ```php
+use Hamzi\NativeRag\Facades\NativeRag;
+use Illuminate\Support\Facades\Route;
+
+Route::post('/api/ai/stream', function () {
+    return NativeRag::stream([
+        ['role' => 'user', 'content' => 'Write a comprehensive guide about Eloquent.']
+    ]);
+});
+```
+
+### 3. "Zero-Infra" Model Embeddings
+
+Turn any Laravel Model into a searchable AI Vector Document by simply attaching the `Embeddable` trait. The package will automatically chunk the text and calculate local embeddings in the background when the model is saved.
+
+```php
+namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
 use Hamzi\NativeRag\Traits\Embeddable;
 
@@ -64,21 +115,25 @@ class Article extends Model
 {
     use Embeddable;
     
-    // Tell NativeRAG what data to embed
+    /**
+     * Define the specific text payload you want the AI to index.
+     */
     public function toEmbeddableString(): string
     {
-        return $this->title . "\n\n" . $this->content;
+        return "Title: {$this->title}\n\nContent: {$this->content}";
     }
 }
 ```
 
-Now, searching your models via Vector Similarity is natively integrated into your PHP application:
+### 4. Vector Similarity Semantic Search
+
+Query your native database using mathematical semantic search directly from PHP.
 
 ```php
 use Hamzi\NativeRag\Services\VectorSearchEngine;
 use Hamzi\NativeRag\Facades\NativeRag;
 
-// 1. Convert user's question to a vector
+// 1. Convert the user's plain-text question into a mathematical vector array
 $questionVector = NativeRag::embedding()->embed("How does quantum physics work?");
 
 // 2. Scan your database natively
@@ -86,31 +141,34 @@ $engine = new VectorSearchEngine();
 $closestChunks = $engine->search($questionVector, limit: 3, minScore: 0.50);
 
 foreach ($closestChunks as $chunk) {
-    echo $chunk->chunk_content; // Raw text matching the query
-    echo $chunk->similarity; // e.g. 0.8921 cosine similarity score
+    echo $chunk->chunk_content; // The raw text section that matched the query
+    echo $chunk->similarity; // The exact cosine similarity score (e.g. 0.8921)
 }
-```
-
-### 3. Reactive SSE Streaming
-
-Send tokens to the browser in real-time as your local GPU/CPU generates them:
-
-```php
-use Hamzi\NativeRag\Facades\NativeRag;
-
-Route::post('/api/stream', function () {
-    return NativeRag::stream([
-        ['role' => 'user', 'content' => 'Write a very long poem about Laravel.']
-    ]);
-});
 ```
 
 ---
 
-## 🔒 Security & Performance
+## 🔒 Security & Privacy
 
-- **100% Privacy:** All queries execute locally against your GPU/CPU via LM Studio or Ollama. Zero data is transmitted to OpenAI, Anthropic, or external providers.
-- **Encrypted Payloads:** Enable `'encrypt_payloads' => true` in `config/nativerag.php` to cryptographically encrypt chat histories stored in MySQL/PostgreSQL using Laravel's native App Key.
-- **Strict Typing:** Built with PHP 8.2+ readonly DTOs, Enums, and Constructor Promotion under `declare(strict_types=1)`.
+- **100% Privacy-First:** All API queries execute strictly against your local or private instance via LM Studio or Ollama. Zero external transmissions.
+- **Payload Encryption:** If enabled in `config/nativerag.php` (`'encrypt_payloads' => true`), all chat histories and metadata stored in the database will be cryptographically encrypted using Laravel's native App Key.
+- **SQL Injection Prevention:** Utilizes strict Laravel query builders and parameterized bindings.
 
-*Engineered by Hamzi.*
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## 🛡️ Security Vulnerabilities
+
+Please review our [SECURITY.md](SECURITY.md) policy on how to report security vulnerabilities securely.
+
+## 📄 License
+
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+
+---
+<p align="center">
+  <b>Engineered with ❤️ by Hamzi</b>
+</p>

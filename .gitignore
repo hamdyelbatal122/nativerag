@@ -1,0 +1,21 @@
+/vendor/
+/node_modules/
+/public/build/
+
+# IDE & OS Files
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+
+# Testing
+/phpunit.xml
+/coverage/
+/.phpunit.cache/
+/.php-cs-fixer.cache
+
+# Environment
+.env
+.env.backup
+.env.testing
