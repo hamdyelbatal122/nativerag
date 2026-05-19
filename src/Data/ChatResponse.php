@@ -7,7 +7,7 @@ namespace Hamzi\NativeRag\Data;
 final readonly class ChatResponse
 {
     /**
-     * @param array<string, mixed> $raw
+     * @param  array<string, mixed>  $raw
      */
     public function __construct(
         public string $content,

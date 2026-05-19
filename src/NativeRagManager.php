@@ -45,7 +45,7 @@ class NativeRagManager extends Manager
     {
         $instance = $this->driver($driver);
 
-        if (!$instance instanceof EmbeddingEngineContract) {
+        if (! $instance instanceof EmbeddingEngineContract) {
             throw new \InvalidArgumentException("Driver [{$driver}] does not support embeddings.");
         }
 

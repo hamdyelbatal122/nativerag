@@ -11,9 +11,7 @@ class NativeRagStreamResponse extends StreamedResponse
     /**
      * Create a new SSE Streamed Response.
      *
-     * @param callable $callback
-     * @param int $status
-     * @param array<string, string> $headers
+     * @param  array<string, string>  $headers
      */
     public function __construct(callable $callback, int $status = 200, array $headers = [])
     {
@@ -29,11 +27,6 @@ class NativeRagStreamResponse extends StreamedResponse
 
     /**
      * Helper to yield a formatted SSE data chunk and flush the buffer immediately.
-     *
-     * @param mixed $data
-     * @param string|null $event
-     * @param string|null $id
-     * @return void
      */
     public static function sendChunk(mixed $data, ?string $event = null, ?string $id = null): void
     {

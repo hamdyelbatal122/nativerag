@@ -13,9 +13,7 @@ class VectorSearchEngine
     /**
      * Search the database for the most similar chunks based on the provided embedding vector.
      *
-     * @param array<float>|array<int, float> $queryEmbedding
-     * @param int $limit
-     * @param float|null $minScore
+     * @param  array<float>|array<int, float>  $queryEmbedding
      * @return Collection<int, NativeRagEmbedding>
      */
     public function search(array $queryEmbedding, int $limit = 5, ?float $minScore = null): Collection
@@ -33,16 +31,19 @@ class VectorSearchEngine
     /**
      * Portable mathematical calculation pulling embeddings into a lazy collection and scoring via PHP.
      * Extremely compatible across any database driver (SQLite, MySQL, SQL Server) without special extensions.
+     *
+     * @param array<float> $queryEmbedding
+     * @return \Illuminate\Support\Collection<int, \Hamzi\NativeRag\Models\NativeRagEmbedding>
      */
-    protected function searchViaCollection(array $queryEmbedding, int $limit, float $minScore): Collection
+    protected function searchViaCollection(array $queryEmbedding, int $limit, float $minScore): \Illuminate\Support\Collection
     {
         $results = collect();
 
         // Use cursor to avoid loading all massive JSON embeddings into memory at once
-        foreach (NativeRagEmbedding::cursor() as $record) {
+        foreach (NativeRagEmbedding::query()->cursor() as $record) {
             $recordEmbedding = $record->embedding;
-            
-            if (!is_array($recordEmbedding) || empty($recordEmbedding)) {
+
+            if (empty($recordEmbedding)) {
                 continue;
             }
 
@@ -62,24 +63,30 @@ class VectorSearchEngine
      * Optimized raw database queries mapping cosine similarity math directly to SQL.
      * Requires the DB engine to support JSON array extraction or relies on pgvector if configured.
      * We use a unified fallback that delegates to the collection approach if SQL math is too complex for the active driver.
+     *
+     * @param array<float> $queryEmbedding
+     * @return \Illuminate\Support\Collection<int, \Hamzi\NativeRag\Models\NativeRagEmbedding>
      */
-    protected function searchViaDatabase(array $queryEmbedding, int $limit, float $minScore): Collection
+    protected function searchViaDatabase(array $queryEmbedding, int $limit, float $minScore): \Illuminate\Support\Collection
     {
         $connection = DB::connection(config('nativerag.embeddings.connection'));
         $driver = $connection->getDriverName();
 
         // Postgres pgvector support if available
         if ($driver === 'pgsql') {
-            $vectorStr = '[' . implode(',', $queryEmbedding) . ']';
-            
+            $vectorStr = '['.implode(',', $queryEmbedding).']';
+
             try {
-                return NativeRagEmbedding::query()
+                /** @var \Illuminate\Support\Collection<int, \Hamzi\NativeRag\Models\NativeRagEmbedding> $results */
+                $results = NativeRagEmbedding::query()
                     // 1 - (embedding <=> query) = cosine similarity in pgvector
                     ->selectRaw('*, 1 - (embedding <=> ?) as similarity', [$vectorStr])
                     ->having('similarity', '>=', $minScore)
                     ->orderByDesc('similarity')
                     ->limit($limit)
                     ->get();
+                    
+                return $results;
             } catch (\Exception $e) {
                 // Fallback to PHP computation if pgvector extension is missing
                 return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
@@ -88,7 +95,7 @@ class VectorSearchEngine
 
         // Standard MySQL/SQLite math for JSON arrays is extremely complex to write dynamically
         // without knowing vector dimensions. For robust "Zero-Infra" out-of-the-box usage,
-        // we heavily optimize by falling back to collection cursor filtering which works flawlessly 
+        // we heavily optimize by falling back to collection cursor filtering which works flawlessly
         // across all schema setups without needing DB extensions.
         return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
     }
@@ -96,15 +103,18 @@ class VectorSearchEngine
     /**
      * Compute Cosine Similarity between two arrays of floats.
      * Returns a score between -1.0 and 1.0 (1.0 meaning exact match).
+     *
+     * @param array<float> $a
+     * @param array<float> $b
      */
-    public function cosineSimilarity(array $a, array $b): float
+    protected function cosineSimilarity(array $a, array $b): float
     {
         $dotProduct = 0.0;
         $normA = 0.0;
         $normB = 0.0;
 
         $count = min(count($a), count($b));
-        
+
         for ($i = 0; $i < $count; $i++) {
             $valA = (float) $a[$i];
             $valB = (float) $b[$i];

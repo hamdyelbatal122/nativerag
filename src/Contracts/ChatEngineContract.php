@@ -12,18 +12,16 @@ interface ChatEngineContract
     /**
      * Send a list of messages to the local model and get a single chat completion response.
      *
-     * @param array<array{role: string, content: string}> $messages
-     * @param array<string, mixed> $options
-     * @return ChatResponse
+     * @param  array<array{role: string, content: string}>  $messages
+     * @param  array<string, mixed>  $options
      */
     public function chat(array $messages, array $options = []): ChatResponse;
 
     /**
      * Send a list of messages to the local model and return a streamed SSE response.
      *
-     * @param array<array{role: string, content: string}> $messages
-     * @param array<string, mixed> $options
-     * @return StreamedResponse
+     * @param  array<array{role: string, content: string}>  $messages
+     * @param  array<string, mixed>  $options
      */
     public function stream(array $messages, array $options = []): StreamedResponse;
 }

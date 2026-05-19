@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property string $id
+ * @property string $chunk_content
+ * @property array<float> $embedding
+ * @property string $hash
+ */
 class NativeRagEmbedding extends Model
 {
     use HasUuids;
@@ -32,7 +38,7 @@ class NativeRagEmbedding extends Model
     }
 
     /**
-     * @return MorphTo<Model, NativeRagEmbedding>
+     * @return MorphTo<Model, covariant $this>
      */
     public function embeddable(): MorphTo
     {

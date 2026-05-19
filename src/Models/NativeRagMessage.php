@@ -26,11 +26,11 @@ class NativeRagMessage extends Model
     {
         $casts = [
             'metadata' => 'array',
-            'tokens'   => 'integer',
+            'tokens' => 'integer',
         ];
 
         if (config('nativerag.conversations.encrypt_payloads', false)) {
-            $casts['content']  = 'encrypted';
+            $casts['content'] = 'encrypted';
             $casts['metadata'] = 'encrypted:array';
         }
 

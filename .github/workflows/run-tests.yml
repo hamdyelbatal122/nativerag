@@ -12,9 +12,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: [8.2, 8.3, 8.4]
+        php: [8.2, 8.3, 8.4, 8.5]
         laravel: ['11.*', '12.*', '13.*']
         stability: [prefer-lowest, prefer-stable]
+        include:
+          - laravel: '11.*'
+            testbench: '^9.0'
+          - laravel: '12.*'
+            testbench: '^10.0'
+          - laravel: '13.*'
+            testbench: '^10.0'
 
     name: PHP ${{ matrix.php }} — Laravel ${{ matrix.laravel }} (${{ matrix.stability }})
 
@@ -22,21 +29,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
+      - name: Setup PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite3, pdo_sqlite, bcmath, intl, fileinfo
           coverage: none
 
-      - name: Install dependencies
+      - name: Require correct testbench & illuminate versions
         run: |
-          composer require "illuminate/support:${{ matrix.laravel }}" \
-                           "illuminate/database:${{ matrix.laravel }}" \
-                           "illuminate/http:${{ matrix.laravel }}" \
-                           --no-interaction --no-update
+          composer require \
+            "illuminate/support:${{ matrix.laravel }}" \
+            "illuminate/database:${{ matrix.laravel }}" \
+            "illuminate/http:${{ matrix.laravel }}" \
+            "orchestra/testbench:${{ matrix.testbench }}" \
+            --no-interaction --no-update
 
-      - name: Update dependencies (${{ matrix.stability }})
+      - name: Install dependencies (${{ matrix.stability }})
         run: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress
 
       - name: Run tests
@@ -45,6 +54,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     name: Code Style (Pint)
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -56,14 +66,15 @@ jobs:
           coverage: none
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
 
-      - name: Run Pint
+      - name: Run Pint (dry-run)
         run: vendor/bin/pint --test
 
   analyse:
     runs-on: ubuntu-latest
     name: Static Analysis (PHPStan)
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,7 +86,7 @@ jobs:
           coverage: none
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
 
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --memory-limit=512M

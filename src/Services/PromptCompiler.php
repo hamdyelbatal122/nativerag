@@ -9,9 +9,8 @@ class PromptCompiler
     /**
      * Compile a prompt template with the provided variable replacements.
      *
-     * @param string $template The prompt template containing {{placeholders}}
-     * @param array<string, string> $variables Key-value pairs for substitution
-     * @return string
+     * @param  string  $template  The prompt template containing {{placeholders}}
+     * @param  array<string, string>  $variables  Key-value pairs for substitution
      */
     public function compile(string $template, array $variables = []): string
     {
@@ -27,14 +26,13 @@ class PromptCompiler
     /**
      * Helper to build a standard RAG system prompt incorporating search context.
      *
-     * @param string $systemInstruction Base instructions for the AI persona
-     * @param string $context The text retrieved from the Vector Search Engine
-     * @param string $query The user's specific question
-     * @return string
+     * @param  string  $systemInstruction  Base instructions for the AI persona
+     * @param  string  $context  The text retrieved from the Vector Search Engine
+     * @param  string  $query  The user's specific question
      */
     public function buildRagPrompt(string $systemInstruction, string $context, string $query): string
     {
-        $template = <<<PROMPT
+        $template = <<<'PROMPT'
 {{instruction}}
 
 You are a highly capable and intelligent assistant. Use ONLY the following provided context to answer the user's question. If the answer is not contained within the context, state that you do not have the information, and do not hallucinate an answer.

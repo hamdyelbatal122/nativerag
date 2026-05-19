@@ -16,7 +16,7 @@ return new class extends Migration
         $tableConversations = config('nativerag.conversations.table_conversations', 'nativerag_conversations');
         $tableMessages = config('nativerag.conversations.table_messages', 'nativerag_messages');
 
-        if (!Schema::hasTable($tableConversations)) {
+        if (! Schema::hasTable($tableConversations)) {
             Schema::create($tableConversations, function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->string('name')->nullable();
@@ -25,7 +25,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable($tableMessages)) {
+        if (! Schema::hasTable($tableMessages)) {
             Schema::create($tableMessages, function (Blueprint $table) use ($tableConversations) {
                 $table->uuid('id')->primary();
                 $table->uuid('conversation_id');

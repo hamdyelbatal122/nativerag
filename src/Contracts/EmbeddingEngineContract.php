@@ -9,8 +9,8 @@ interface EmbeddingEngineContract
     /**
      * Convert text into a numerical vector embedding.
      *
-     * @param string|array<string> $text
-     * @param array<string, mixed> $options
+     * @param  string|array<string>  $text
+     * @param  array<string, mixed>  $options
      * @return array<int|string, array<float>|float>
      */
     public function embed(string|array $text, array $options = []): array;

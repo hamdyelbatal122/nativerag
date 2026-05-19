@@ -71,12 +71,12 @@ return [
         'connection' => env('NATIVE_RAG_DB_CONNECTION'), // null uses default application connection
         'chunk_size' => (int) env('NATIVE_RAG_CHUNK_SIZE', 1000), // in characters
         'chunk_overlap' => (int) env('NATIVE_RAG_CHUNK_OVERLAP', 200), // in characters
-        
+
         // Strategy for cosine similarity search: "database" or "collection"
         // - "database": Direct raw SQL calculations (highly optimized for MySQL, PostgreSQL, SQLite).
         // - "collection": Falls back to PHP-side array calculations (best for dynamic custom schemas).
         'search_strategy' => env('NATIVE_RAG_SEARCH_STRATEGY', 'database'),
-        
+
         // Threshold matching score for retrieval [0.0 to 1.0]
         'min_score' => (float) env('NATIVE_RAG_MIN_SCORE', 0.35),
     ],
@@ -93,16 +93,16 @@ return [
     'conversations' => [
         'table_conversations' => 'nativerag_conversations',
         'table_messages' => 'nativerag_messages',
-        
+
         // Maximum messages preserved in database active sliding window context
         'max_history_count' => (int) env('NATIVE_RAG_MAX_HISTORY_COUNT', 10),
-        
+
         // Strategy: "count" (limit by last N messages) or "token" (approximate by character/token count)
         'pruning_strategy' => env('NATIVE_RAG_PRUNING_STRATEGY', 'count'),
-        
+
         // Limit context if using token pruning strategy
         'max_tokens_threshold' => (int) env('NATIVE_RAG_MAX_TOKENS_THRESHOLD', 4096),
-        
+
         // Encrypt message contents in the database for extra security/privacy
         'encrypt_payloads' => (bool) env('NATIVE_RAG_ENCRYPT_PAYLOADS', false),
     ],

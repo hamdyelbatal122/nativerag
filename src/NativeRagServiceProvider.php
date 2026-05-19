@@ -14,7 +14,8 @@ class NativeRagServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/nativerag.php', 'nativerag'
+            __DIR__.'/../config/nativerag.php',
+            'nativerag'
         );
 
         $this->app->singleton('nativerag', function ($app) {
@@ -29,14 +30,14 @@ class NativeRagServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/nativerag.php' => config_path('nativerag.php'),
+                __DIR__.'/../config/nativerag.php' => config_path('nativerag.php'),
             ], 'nativerag-config');
 
             $this->publishes([
-                __DIR__ . '/../database/migrations/' => database_path('migrations'),
+                __DIR__.'/../database/migrations/' => database_path('migrations'),
             ], 'nativerag-migrations');
         }
 
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 }

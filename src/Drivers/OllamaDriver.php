@@ -24,7 +24,7 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
     protected array $options;
 
     /**
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed>  $config
      */
     public function __construct(array $config)
     {
@@ -46,8 +46,8 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
     }
 
     /**
-     * @param array<array{role: string, content: string}> $messages
-     * @param array<string, mixed> $options
+     * @param  array<array{role: string, content: string}>  $messages
+     * @param  array<string, mixed>  $options
      */
     public function chat(array $messages, array $options = []): ChatResponse
     {
@@ -71,8 +71,8 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
     }
 
     /**
-     * @param array<array{role: string, content: string}> $messages
-     * @param array<string, mixed> $options
+     * @param  array<array{role: string, content: string}>  $messages
+     * @param  array<string, mixed>  $options
      */
     public function stream(array $messages, array $options = []): StreamedResponse
     {
@@ -89,31 +89,31 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
                 ->post("{$this->baseUrl}/api/chat", $payload);
 
             $body = $response->toPsrResponse()->getBody();
-            
+
             $buffer = '';
-            while (!$body->eof()) {
+            while (! $body->eof()) {
                 $chunk = $body->read(1024);
                 if ($chunk === '') {
                     continue;
                 }
-                
+
                 $buffer .= $chunk;
-                
+
                 // Ollama streams JSON objects delimited by newlines
                 $lines = explode("\n", $buffer);
                 // Keep the last incomplete line in the buffer
                 $buffer = array_pop($lines);
-                
+
                 foreach ($lines as $line) {
                     if (trim($line) === '') {
                         continue;
                     }
-                    
+
                     $data = json_decode($line, true);
                     if (is_array($data)) {
                         $token = $data['message']['content'] ?? '';
                         $isDone = $data['done'] ?? false;
-                        
+
                         NativeRagStreamResponse::sendChunk([
                             'content' => $token,
                             'done' => $isDone,
@@ -125,8 +125,8 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
     }
 
     /**
-     * @param string|array<string> $text
-     * @param array<string, mixed> $options
+     * @param  string|array<string>  $text
+     * @param  array<string, mixed>  $options
      * @return array<int|string, array<float>|float>
      */
     public function embed(string|array $text, array $options = []): array
@@ -134,7 +134,7 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
         // For a single string, Ollama's /api/embeddings endpoint was traditional,
         // but recent versions support /api/embed for multiple inputs.
         // We will use /api/embed which accepts `input` as string or array of strings.
-        
+
         $payload = [
             'model' => $this->embeddingModel,
             'input' => is_array($text) ? array_values($text) : [$text],

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Hamzi\NativeRag\Facades;
 
+use Hamzi\NativeRag\NativeRagManager;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @method static \Hamzi\NativeRag\Data\ChatResponse chat(array $messages, array $options = [])
- * @method static \Symfony\Component\HttpFoundation\StreamedResponse stream(array $messages, array $options = [])
- * @method static \Hamzi\NativeRag\Contracts\ChatEngineContract driver(string|null $driver = null)
- * @method static \Hamzi\NativeRag\Contracts\EmbeddingEngineContract embedding(string $driver = 'ollama')
+ * @method static \Hamzi\NativeRag\Data\ChatResponse chat(array<int, array{role: string, content: string}> $messages, array<string, mixed> $options = [])
+ * @method static \Symfony\Component\HttpFoundation\StreamedResponse stream(array<int, array{role: string, content: string}> $messages, array<string, mixed> $options = [])
+ * @method static \Hamzi\NativeRag\Contracts\EmbeddingEngineContract embedding()
+ * @method static \Hamzi\NativeRag\Contracts\ChatEngineContract driver(?string $driver = null)
  *
  * @see \Hamzi\NativeRag\NativeRagManager
  */

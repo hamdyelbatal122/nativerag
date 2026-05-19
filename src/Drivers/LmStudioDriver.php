@@ -22,7 +22,7 @@ class LmStudioDriver implements ChatEngineContract
     protected array $options;
 
     /**
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed>  $config
      */
     public function __construct(array $config)
     {
@@ -43,8 +43,8 @@ class LmStudioDriver implements ChatEngineContract
     }
 
     /**
-     * @param array<array{role: string, content: string}> $messages
-     * @param array<string, mixed> $options
+     * @param  array<array{role: string, content: string}>  $messages
+     * @param  array<string, mixed>  $options
      */
     public function chat(array $messages, array $options = []): ChatResponse
     {
@@ -67,8 +67,8 @@ class LmStudioDriver implements ChatEngineContract
     }
 
     /**
-     * @param array<array{role: string, content: string}> $messages
-     * @param array<string, mixed> $options
+     * @param  array<array{role: string, content: string}>  $messages
+     * @param  array<string, mixed>  $options
      */
     public function stream(array $messages, array $options = []): StreamedResponse
     {
@@ -84,39 +84,40 @@ class LmStudioDriver implements ChatEngineContract
                 ->post("{$this->baseUrl}/v1/chat/completions", $payload);
 
             $body = $response->toPsrResponse()->getBody();
-            
+
             $buffer = '';
-            while (!$body->eof()) {
+            while (! $body->eof()) {
                 $chunk = $body->read(1024);
                 if ($chunk === '') {
                     continue;
                 }
-                
+
                 $buffer .= $chunk;
-                
+
                 // SSE streams are delimited by double newlines or single newlines
                 $lines = explode("\n", $buffer);
                 $buffer = array_pop($lines);
-                
+
                 foreach ($lines as $line) {
                     $line = trim($line);
                     if ($line === '' || str_starts_with($line, ':')) {
                         continue; // Skip empty lines and SSE comments
                     }
-                    
+
                     if (str_starts_with($line, 'data: ')) {
                         $dataStr = substr($line, 6);
-                        
+
                         if ($dataStr === '[DONE]') {
                             NativeRagStreamResponse::sendChunk(['content' => '', 'done' => true]);
+
                             break;
                         }
-                        
+
                         $data = json_decode($dataStr, true);
                         if (is_array($data)) {
                             $token = $data['choices'][0]['delta']['content'] ?? '';
                             $isDone = ($data['choices'][0]['finish_reason'] ?? null) !== null;
-                            
+
                             if ($token !== '' || $isDone) {
                                 NativeRagStreamResponse::sendChunk([
                                     'content' => $token,

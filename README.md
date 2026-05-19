@@ -37,11 +37,11 @@ No OpenAI keys. No Pinecone. No cloud data leaks. **100% data residency. Zero ex
 
 ## ✅ Compatibility
 
-| Laravel | PHP          | Status             |
-|---------|--------------|--------------------|
-| 13.x    | 8.2, 8.3, 8.4 | ✅ Fully Supported |
-| 12.x    | 8.2, 8.3, 8.4 | ✅ Fully Supported |
-| 11.x    | 8.2, 8.3, 8.4 | ✅ Fully Supported |
+| Laravel | PHP | Status |
+|---------|-----|--------|
+| 13.x | 8.2, 8.3, 8.4, 8.5 | ✅ Fully Supported |
+| 12.x | 8.2, 8.3, 8.4, 8.5 | ✅ Fully Supported |
+| 11.x | 8.2, 8.3, 8.4, 8.5 | ✅ Fully Supported |
 
 ---
 

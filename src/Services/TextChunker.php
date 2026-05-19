@@ -9,15 +9,12 @@ class TextChunker
     /**
      * Chunk the given text into an array of smaller overlapping text segments.
      *
-     * @param string $text
-     * @param int $chunkSize
-     * @param int $overlap
      * @return array<int, string>
      */
     public function chunk(string $text, int $chunkSize = 1000, int $overlap = 200): array
     {
         $text = trim($text);
-        
+
         if ($text === '') {
             return [];
         }
@@ -33,10 +30,11 @@ class TextChunker
         while ($currentStart < $textLength) {
             // Find the maximum end point for the current chunk
             $endPoint = $currentStart + $chunkSize;
-            
+
             // If we are beyond the end of the text, just take the rest and break
             if ($endPoint >= $textLength) {
                 $chunks[] = trim(substr($text, $currentStart));
+
                 break;
             }
 
@@ -65,7 +63,7 @@ class TextChunker
     protected function findNaturalBoundary(string $text, int $start, int $end): int|false
     {
         $segment = substr($text, $start, $end - $start);
-        
+
         // Prefer double newline (paragraph)
         $pos = strrpos($segment, "\n\n");
         if ($pos !== false) {
@@ -79,7 +77,7 @@ class TextChunker
         }
 
         // Prefer period + space
-        $pos = strrpos($segment, ". ");
+        $pos = strrpos($segment, '. ');
         if ($pos !== false) {
             return $start + $pos + 2;
         }

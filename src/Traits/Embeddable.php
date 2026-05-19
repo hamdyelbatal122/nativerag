@@ -9,6 +9,7 @@ use Hamzi\NativeRag\Models\NativeRagEmbedding;
 use Hamzi\NativeRag\Services\TextChunker;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/** @phpstan-ignore trait.unused */
 trait Embeddable
 {
     /**
@@ -56,7 +57,7 @@ trait Embeddable
     public function syncEmbeddings(): void
     {
         $content = $this->toEmbeddableString();
-        $hash    = md5($content);
+        $hash = md5($content);
 
         // Early exit: if the content hash hasn't changed AND embeddings exist, skip.
         $existingEmbedding = $this->embeddings()->first();
@@ -72,10 +73,10 @@ trait Embeddable
             return;
         }
 
-        $chunkSize    = (int) config('nativerag.embeddings.chunk_size', 1000);
+        $chunkSize = (int) config('nativerag.embeddings.chunk_size', 1000);
         $chunkOverlap = (int) config('nativerag.embeddings.chunk_overlap', 200);
 
-        $chunks = (new TextChunker())->chunk($content, $chunkSize, $chunkOverlap);
+        $chunks = (new TextChunker)->chunk($content, $chunkSize, $chunkOverlap);
 
         $embedder = NativeRag::embedding();
 
@@ -84,8 +85,8 @@ trait Embeddable
 
             $this->embeddings()->create([
                 'chunk_content' => $chunkContent,
-                'embedding'     => $vector,
-                'hash'          => $hash,
+                'embedding' => $vector,
+                'hash' => $hash,
             ]);
         }
     }

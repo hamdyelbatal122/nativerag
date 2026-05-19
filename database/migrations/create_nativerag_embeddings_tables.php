@@ -15,7 +15,7 @@ return new class extends Migration
     {
         $tableName = config('nativerag.embeddings.table_name', 'nativerag_embeddings');
 
-        if (!Schema::hasTable($tableName)) {
+        if (! Schema::hasTable($tableName)) {
             Schema::create($tableName, function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->string('embeddable_type');
