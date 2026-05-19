@@ -4,6 +4,19 @@ All notable changes to `hamzi/nativerag` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-05-19
+
+### Fixed
+- **[CRITICAL]** Removed conflicting `protected $casts = [...]` property from `NativeRagConversation` that clashed with the `casts()` method — caused unpredictable behavior in Laravel 12+ where `casts()` is the canonical approach.
+- Fixed `Embeddable::bootEmbeddable()` callbacks to use `self` type hint instead of `Model`, ensuring correct static resolution and full PHPStan compatibility.
+- Removed redundant double `count()` query in `syncEmbeddings()` — now uses a single `first()` check for hash comparison (2× fewer DB queries per save).
+- Fixed generic type hints: `HasMany<NativeRagMessage, $this>`, `BelongsTo<NativeRagConversation, $this>`, `MorphMany<NativeRagEmbedding, $this>` for PHPStan Level 6 compliance.
+- Cast `config()` return values to `int` in `pruneHistory()` and `syncEmbeddings()` to prevent type coercion warnings in strict mode.
+
+### Added
+- Full **PHP 8.4** support added to GitHub Actions CI matrix (now tests PHP 8.2, 8.3, 8.4 × Laravel 11/12/13).
+- Updated compatibility table in `README.md` to reflect PHP 8.4 support.
+
 ## [1.0.1] - 2026-05-19
 
 ### Added

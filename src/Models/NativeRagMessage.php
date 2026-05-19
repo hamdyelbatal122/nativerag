@@ -19,15 +19,18 @@ class NativeRagMessage extends Model
         return config('nativerag.conversations.table_messages', 'nativerag_messages');
     }
 
+    /**
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         $casts = [
             'metadata' => 'array',
-            'tokens' => 'integer',
+            'tokens'   => 'integer',
         ];
 
         if (config('nativerag.conversations.encrypt_payloads', false)) {
-            $casts['content'] = 'encrypted';
+            $casts['content']  = 'encrypted';
             $casts['metadata'] = 'encrypted:array';
         }
 
@@ -35,7 +38,7 @@ class NativeRagMessage extends Model
     }
 
     /**
-     * @return BelongsTo<NativeRagConversation, NativeRagMessage>
+     * @return BelongsTo<NativeRagConversation, $this>
      */
     public function conversation(): BelongsTo
     {

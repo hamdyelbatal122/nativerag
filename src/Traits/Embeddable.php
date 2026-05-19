@@ -7,7 +7,6 @@ namespace Hamzi\NativeRag\Traits;
 use Hamzi\NativeRag\Facades\NativeRag;
 use Hamzi\NativeRag\Models\NativeRagEmbedding;
 use Hamzi\NativeRag\Services\TextChunker;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 trait Embeddable
@@ -17,20 +16,21 @@ trait Embeddable
      */
     public static function bootEmbeddable(): void
     {
-        static::saved(function (Model $model) {
-            // Attempt to sync embeddings synchronously on save.
-            // In a heavily scaled app, developers might want to override this 
-            // and dispatch to a queue. For NativeRAG defaults, we sync immediately.
+        // Use `self` so the callback receives the concrete model class
+        // that uses this trait — ensures proper type resolution in PHP 8.2+
+        static::saved(static function (self $model): void {
             $model->syncEmbeddings();
         });
 
-        static::deleted(function (Model $model) {
+        static::deleted(static function (self $model): void {
             $model->embeddings()->delete();
         });
     }
 
     /**
      * Define the polymorphic relationship to the embeddings table.
+     *
+     * @return MorphMany<NativeRagEmbedding, $this>
      */
     public function embeddings(): MorphMany
     {
@@ -38,57 +38,54 @@ trait Embeddable
     }
 
     /**
-     * Defines the string content that should be vector embedded.
-     * Developers should override this method in their model to return the combined 
-     * searchable fields (e.g. return $this->title . "\n\n" . $this->body).
+     * Define the string content that should be vector embedded.
+     *
+     * Developers MUST override this method in their model to return the correct
+     * searchable payload (e.g. return $this->title . "\n\n" . $this->body).
      */
     public function toEmbeddableString(): string
     {
-        // Fallback: json encode the model if not overridden.
+        // Fallback: JSON-encode the entire model's visible attributes.
         return $this->toJson();
     }
 
     /**
      * Synchronizes the text chunks and their embeddings into the database.
-     * Generates a hash to avoid redundant API calls if the content hasn't changed.
+     * Uses an MD5 hash for change detection to skip redundant embedding API calls.
      */
     public function syncEmbeddings(): void
     {
         $content = $this->toEmbeddableString();
-        $hash = md5($content);
+        $hash    = md5($content);
 
-        // Check if the current hash exists and perfectly matches to skip re-processing.
-        // We look at the first embedding's hash. If the document was empty, count == 0.
-        $existingHash = $this->embeddings()->first()?->hash;
-        
-        if ($existingHash === $hash && $this->embeddings()->count() > 0) {
-            return; // Content hasn't changed, skip expensive LLM API calls.
+        // Early exit: if the content hash hasn't changed AND embeddings exist, skip.
+        $existingEmbedding = $this->embeddings()->first();
+
+        if ($existingEmbedding !== null && $existingEmbedding->hash === $hash) {
+            return;
         }
 
-        // Wipe old embeddings for this model
+        // Wipe stale embeddings before re-indexing
         $this->embeddings()->delete();
 
         if (trim($content) === '') {
             return;
         }
 
-        $chunker = new TextChunker();
-        $chunks = $chunker->chunk(
-            $content,
-            config('nativerag.embeddings.chunk_size', 1000),
-            config('nativerag.embeddings.chunk_overlap', 200)
-        );
+        $chunkSize    = (int) config('nativerag.embeddings.chunk_size', 1000);
+        $chunkOverlap = (int) config('nativerag.embeddings.chunk_overlap', 200);
+
+        $chunks = (new TextChunker())->chunk($content, $chunkSize, $chunkOverlap);
 
         $embedder = NativeRag::embedding();
 
         foreach ($chunks as $chunkContent) {
-            // Retrieve vector embedding array from the active driver (e.g. Ollama nomic-embed-text)
             $vector = $embedder->embed($chunkContent);
 
             $this->embeddings()->create([
                 'chunk_content' => $chunkContent,
-                'embedding' => $vector,
-                'hash' => $hash,
+                'embedding'     => $vector,
+                'hash'          => $hash,
             ]);
         }
     }
