@@ -93,6 +93,35 @@ class VectorSearchEngine
             }
         }
 
+        // SQLite native support using PDO custom functions
+        if ($driver === 'sqlite') {
+            try {
+                $pdo = $connection->getPdo();
+                $pdo->sqliteCreateFunction('cosine_similarity', function ($a, $b) {
+                    $vecA = json_decode((string) $a, true);
+                    $vecB = json_decode((string) $b, true);
+
+                    if (! is_array($vecA) || ! is_array($vecB)) {
+                        return 0.0;
+                    }
+
+                    return $this->cosineSimilarity($vecA, $vecB);
+                }, 2);
+
+                /** @var Collection<int, NativeRagEmbedding> $results */
+                $results = NativeRagEmbedding::query()
+                    ->selectRaw('*, cosine_similarity(embedding, ?) as similarity', [json_encode($queryEmbedding)])
+                    ->having('similarity', '>=', $minScore)
+                    ->orderByDesc('similarity')
+                    ->limit($limit)
+                    ->get();
+
+                return $results;
+            } catch (\Exception $e) {
+                return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
+            }
+        }
+
         // Standard MySQL/SQLite math for JSON arrays is extremely complex to write dynamically
         // without knowing vector dimensions. For robust "Zero-Infra" out-of-the-box usage,
         // we heavily optimize by falling back to collection cursor filtering which works flawlessly

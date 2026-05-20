@@ -19,13 +19,13 @@ class TextChunker
             return [];
         }
 
-        if (strlen($text) <= $chunkSize) {
+        if (mb_strlen($text, 'UTF-8') <= $chunkSize) {
             return [$text];
         }
 
         $chunks = [];
         $currentStart = 0;
-        $textLength = strlen($text);
+        $textLength = mb_strlen($text, 'UTF-8');
 
         while ($currentStart < $textLength) {
             // Find the maximum end point for the current chunk
@@ -33,7 +33,7 @@ class TextChunker
 
             // If we are beyond the end of the text, just take the rest and break
             if ($endPoint >= $textLength) {
-                $chunks[] = trim(substr($text, $currentStart));
+                $chunks[] = trim(mb_substr($text, $currentStart, null, 'UTF-8'));
 
                 break;
             }
@@ -46,7 +46,7 @@ class TextChunker
                 $endPoint = $naturalBoundary;
             }
 
-            $chunks[] = trim(substr($text, $currentStart, $endPoint - $currentStart));
+            $chunks[] = trim(mb_substr($text, $currentStart, $endPoint - $currentStart, 'UTF-8'));
 
             // Move the start forward by (Chunk Size - Overlap)
             // Or if we found a natural boundary, adjust by the actual consumed length - overlap
@@ -62,22 +62,22 @@ class TextChunker
      */
     protected function findNaturalBoundary(string $text, int $start, int $end): int|false
     {
-        $segment = substr($text, $start, $end - $start);
+        $segment = mb_substr($text, $start, $end - $start, 'UTF-8');
 
         // Prefer double newline (paragraph)
-        $pos = strrpos($segment, "\n\n");
+        $pos = mb_strrpos($segment, "\n\n", 0, 'UTF-8');
         if ($pos !== false) {
             return $start + $pos + 2;
         }
 
         // Prefer single newline
-        $pos = strrpos($segment, "\n");
+        $pos = mb_strrpos($segment, "\n", 0, 'UTF-8');
         if ($pos !== false) {
             return $start + $pos + 1;
         }
 
         // Prefer period + space
-        $pos = strrpos($segment, '. ');
+        $pos = mb_strrpos($segment, '. ', 0, 'UTF-8');
         if ($pos !== false) {
             return $start + $pos + 2;
         }
