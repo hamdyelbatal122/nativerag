@@ -111,3 +111,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [2024-10-23]: chore: update contribution guidelines in docs
 - [2024-10-26]: refactor: optimize vector database embedding queries
 - [2024-10-30]: docs: clarify local model setup steps in README
+- [2026-05-20]: feat: add semantic chunking strategy for long documents
