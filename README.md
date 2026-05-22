@@ -223,5 +223,4 @@ The MIT License (MIT). Please see [LICENSE.md](LICENSE.md) for more information.
 
 ---
 
-<p align="center">Engineered with ❤️ by <strong>Hamdy Elbatal</strong></p>
 
