@@ -131,15 +131,16 @@ source.onmessage = ({ data }) => {
 
 ### 3. Embeddable Models (Auto-Indexing)
 
-Attach the `Embeddable` trait to any Eloquent model. Whenever the model is saved, its content is automatically chunked and embedded locally.
+To enable automatic vector indexing, implement the `EmbeddableContract` interface and use the `Embeddable` trait on any Eloquent model. Whenever the model is saved, its content is automatically chunked, embedded locally, and synchronized in the database.
 
 ```php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Hamzi\NativeRag\Contracts\EmbeddableContract;
 use Hamzi\NativeRag\Traits\Embeddable;
 
-class Article extends Model
+class Article extends Model implements EmbeddableContract
 {
     use Embeddable;
 
@@ -172,7 +173,38 @@ foreach ($results as $chunk) {
 }
 ```
 
-### 5. Switch Driver at Runtime
+### 5. Persistent Multi-Turn Conversations
+
+Easily build persistent chat experiences with built-in sliding-window memory pruning (supporting both message `count` limits and max `token` thresholds).
+
+```php
+use Hamzi\NativeRag\Models\NativeRagConversation;
+
+// 1. Create or retrieve a conversation session
+$conversation = NativeRagConversation::create([
+    'name' => 'Support Session #123',
+]);
+
+// 2. Add system context (Optional)
+$conversation->addSystemMessage('You are a helpful customer support agent.');
+
+// 3. Ask a question (automatically sends message history to LLM, stores the response, and runs auto-pruning)
+$assistantResponse = $conversation->ask('Can you explain how to set up NativeRAG?');
+
+echo $assistantResponse->content; // The generated assistant response
+
+// 4. Follow up (the previous system instruction and chat history are sent automatically)
+$followUpResponse = $conversation->ask('Does it support LM Studio too?');
+
+echo $followUpResponse->content;
+```
+
+#### Memory Pruning Strategies
+Control how history is pruned to stay within context windows:
+- **`count` (Default)**: Keeps the last `N` messages.
+- **`token`**: Keeps the most recent messages up to a custom token threshold (e.g. 4096 tokens). It calculates tokens dynamically using the DB record or falls back to an exact UTF-8 character length approximation (`ceil(chars / 4)`).
+
+### 6. Switch Driver at Runtime
 
 ```php
 use Hamzi\NativeRag\Facades\NativeRag;

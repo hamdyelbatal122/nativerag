@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace Hamzi\NativeRag\Drivers;
 
 use Hamzi\NativeRag\Contracts\ChatEngineContract;
+use Hamzi\NativeRag\Contracts\EmbeddingEngineContract;
 use Hamzi\NativeRag\Data\ChatResponse;
 use Hamzi\NativeRag\Responses\NativeRagStreamResponse;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class LmStudioDriver implements ChatEngineContract
+class LmStudioDriver implements ChatEngineContract, EmbeddingEngineContract
 {
     protected string $baseUrl;
     protected string $chatModel;
+    protected string $embeddingModel;
     protected int $timeout;
     protected int $retryAttempts;
     protected int $retrySleepMs;
@@ -28,6 +30,7 @@ class LmStudioDriver implements ChatEngineContract
     {
         $this->baseUrl = rtrim($config['base_url'] ?? 'http://localhost:1234', '/');
         $this->chatModel = $config['model'] ?? 'local-model';
+        $this->embeddingModel = $config['embedding_model'] ?? 'nomic-embed-text';
         $this->timeout = $config['timeout'] ?? 60;
         $this->retryAttempts = $config['retry_attempts'] ?? 3;
         $this->retrySleepMs = $config['retry_sleep_ms'] ?? 1000;
@@ -87,6 +90,10 @@ class LmStudioDriver implements ChatEngineContract
 
             $buffer = '';
             while (! $body->eof()) {
+                if (connection_aborted()) {
+                    break;
+                }
+
                 $chunk = $body->read(1024);
                 if ($chunk === '') {
                     continue;
@@ -129,5 +136,40 @@ class LmStudioDriver implements ChatEngineContract
                 }
             }
         });
+    }
+
+    /**
+     * @param  string|array<string>  $text
+     * @param  array<string, mixed>  $options
+     * @return array<int|string, array<float>|float>
+     */
+    public function embed(string|array $text, array $options = []): array
+    {
+        $payload = [
+            'model' => $this->embeddingModel,
+            'input' => is_array($text) ? array_values($text) : [$text],
+        ];
+
+        if (! empty($options)) {
+            $payload = array_merge($payload, $options);
+        }
+
+        $response = $this->client()->post("{$this->baseUrl}/v1/embeddings", $payload)->throw();
+        $data = $response->json();
+
+        $embeddings = [];
+        if (isset($data['data']) && is_array($data['data'])) {
+            foreach ($data['data'] as $item) {
+                if (isset($item['embedding']) && is_array($item['embedding'])) {
+                    $embeddings[] = $item['embedding'];
+                }
+            }
+        }
+
+        if (is_string($text) && count($embeddings) === 1) {
+            return $embeddings[0];
+        }
+
+        return $embeddings;
     }
 }

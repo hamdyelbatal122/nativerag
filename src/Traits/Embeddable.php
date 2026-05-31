@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace Hamzi\NativeRag\Traits;
 
-use Hamzi\NativeRag\Facades\NativeRag;
 use Hamzi\NativeRag\Models\NativeRagEmbedding;
-use Hamzi\NativeRag\Services\TextChunker;
+use Hamzi\NativeRag\Services\EmbeddingService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-/** @phpstan-ignore trait.unused */
+/**
+ * Implements EmbeddableContract for Eloquent models.
+ *
+ * This trait should be used alongside `implements EmbeddableContract` on the model class.
+ * It automatically hooks into Eloquent lifecycle events to synchronize embeddings.
+ *
+ * @mixin Model
+ */
 trait Embeddable
 {
     /**
@@ -17,8 +24,6 @@ trait Embeddable
      */
     public static function bootEmbeddable(): void
     {
-        // Use `self` so the callback receives the concrete model class
-        // that uses this trait — ensures proper type resolution in PHP 8.2+
         static::saved(static function (self $model): void {
             $model->syncEmbeddings();
         });
@@ -51,43 +56,11 @@ trait Embeddable
     }
 
     /**
-     * Synchronizes the text chunks and their embeddings into the database.
-     * Uses an MD5 hash for change detection to skip redundant embedding API calls.
+     * Synchronize the text chunks and their embeddings into the database.
+     * Delegates to EmbeddingService for clean separation of concerns.
      */
     public function syncEmbeddings(): void
     {
-        $content = $this->toEmbeddableString();
-        $hash = md5($content);
-
-        // Early exit: if the content hash hasn't changed AND embeddings exist, skip.
-        $existingEmbedding = $this->embeddings()->first();
-
-        if ($existingEmbedding !== null && $existingEmbedding->hash === $hash) {
-            return;
-        }
-
-        // Wipe stale embeddings before re-indexing
-        $this->embeddings()->delete();
-
-        if (trim($content) === '') {
-            return;
-        }
-
-        $chunkSize = (int) config('nativerag.embeddings.chunk_size', 1000);
-        $chunkOverlap = (int) config('nativerag.embeddings.chunk_overlap', 200);
-
-        $chunks = (new TextChunker)->chunk($content, $chunkSize, $chunkOverlap);
-
-        $embedder = NativeRag::embedding();
-
-        foreach ($chunks as $chunkContent) {
-            $vector = $embedder->embed($chunkContent);
-
-            $this->embeddings()->create([
-                'chunk_content' => $chunkContent,
-                'embedding' => $vector,
-                'hash' => $hash,
-            ]);
-        }
+        app(EmbeddingService::class)->sync($this);
     }
 }

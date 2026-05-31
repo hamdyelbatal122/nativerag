@@ -92,6 +92,10 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
 
             $buffer = '';
             while (! $body->eof()) {
+                if (connection_aborted()) {
+                    break;
+                }
+
                 $chunk = $body->read(1024);
                 if ($chunk === '') {
                     continue;

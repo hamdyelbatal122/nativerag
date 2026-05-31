@@ -31,7 +31,7 @@ class NativeRagManager extends Manager
     /**
      * Create an instance of the LM Studio driver.
      */
-    public function createLmstudioDriver(): ChatEngineContract
+    public function createLmstudioDriver(): ChatEngineContract&EmbeddingEngineContract
     {
         return new LmStudioDriver($this->config->get('nativerag.drivers.lmstudio', []));
     }

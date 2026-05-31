@@ -4,3 +4,5 @@ parameters:
         - src
     excludePaths:
         - vendor
+    ignoreErrors:
+        - '#Trait Hamzi\\NativeRag\\Traits\\Embeddable is used zero times and is not analysed\.#'

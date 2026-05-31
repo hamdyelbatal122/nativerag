@@ -81,7 +81,7 @@ class VectorSearchEngine
                 $results = NativeRagEmbedding::query()
                     // 1 - (embedding <=> query) = cosine similarity in pgvector
                     ->selectRaw('*, 1 - (embedding <=> ?) as similarity', [$vectorStr])
-                    ->having('similarity', '>=', $minScore)
+                    ->whereRaw('1 - (embedding <=> ?) >= ?', [$vectorStr, $minScore])
                     ->orderByDesc('similarity')
                     ->limit($limit)
                     ->get();
