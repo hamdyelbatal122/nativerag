@@ -97,11 +97,11 @@ class NativeRagConversation extends Model
     }
 
     /**
-     * Add a message to the conversation and prune history automatically.
+     * Add a message to the conversation.
      *
      * @param  array<string, mixed>|null  $metadata
      */
-    public function addMessage(string $role, string $content, ?array $metadata = null, ?int $tokens = null): NativeRagMessage
+    public function addMessage(string $role, string $content, ?array $metadata = null, ?int $tokens = null, bool $prune = true): NativeRagMessage
     {
         /** @var NativeRagMessage $message */
         $message = $this->messages()->create([
@@ -111,7 +111,9 @@ class NativeRagConversation extends Model
             'tokens' => $tokens,
         ]);
 
-        $this->pruneHistory();
+        if ($prune) {
+            $this->pruneHistory();
+        }
 
         return $message;
     }

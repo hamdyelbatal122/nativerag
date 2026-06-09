@@ -37,12 +37,12 @@ class NativeRagManager extends Manager
     }
 
     /**
-     * Get the default embedding driver.
-     * By default, LM Studio may not provide distinct embedding endpoints in all setups,
-     * so we fallback to Ollama if explicitly requested or let the driver handle it.
+     * Get the embedding driver instance.
      */
-    public function embedding(string $driver = 'ollama'): EmbeddingEngineContract
+    public function embedding(?string $driver = null): EmbeddingEngineContract
     {
+        $driver ??= $this->config->get('nativerag.embeddings.driver') ?? $this->getDefaultDriver();
+
         $instance = $this->driver($driver);
 
         if (! $instance instanceof EmbeddingEngineContract) {

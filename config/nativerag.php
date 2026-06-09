@@ -69,8 +69,10 @@ return [
     'embeddings' => [
         'table_name' => 'nativerag_embeddings',
         'connection' => env('NATIVE_RAG_DB_CONNECTION'), // null uses default application connection
+        'driver' => env('NATIVE_RAG_EMBEDDING_DRIVER'), // null uses the default driver
         'chunk_size' => (int) env('NATIVE_RAG_CHUNK_SIZE', 1000), // in characters
         'chunk_overlap' => (int) env('NATIVE_RAG_CHUNK_OVERLAP', 200), // in characters
+        'batch_size' => (int) env('NATIVE_RAG_BATCH_SIZE', 32), // chunks per embedding request
 
         // Strategy for cosine similarity search: "database" or "collection"
         // - "database": Direct raw SQL calculations (highly optimized for MySQL, PostgreSQL, SQLite).

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class VectorSearchEngine
 {
+    protected static bool $sqliteFunctionRegistered = false;
     /**
      * Search the database for the most similar chunks based on the provided embedding vector.
      *
@@ -97,16 +98,20 @@ class VectorSearchEngine
         if ($driver === 'sqlite') {
             try {
                 $pdo = $connection->getPdo();
-                $pdo->sqliteCreateFunction('cosine_similarity', function ($a, $b) {
-                    $vecA = json_decode((string) $a, true);
-                    $vecB = json_decode((string) $b, true);
 
-                    if (! is_array($vecA) || ! is_array($vecB)) {
-                        return 0.0;
-                    }
+                if (! self::$sqliteFunctionRegistered) {
+                    $pdo->sqliteCreateFunction('cosine_similarity', function ($a, $b) {
+                        $vecA = json_decode((string) $a, true);
+                        $vecB = json_decode((string) $b, true);
 
-                    return $this->cosineSimilarity($vecA, $vecB);
-                }, 2);
+                        if (! is_array($vecA) || ! is_array($vecB)) {
+                            return 0.0;
+                        }
+
+                        return $this->cosineSimilarity($vecA, $vecB);
+                    }, 2);
+                    self::$sqliteFunctionRegistered = true;
+                }
 
                 /** @var Collection<int, NativeRagEmbedding> $results */
                 $results = NativeRagEmbedding::query()

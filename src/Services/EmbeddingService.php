@@ -11,9 +11,12 @@ class EmbeddingService
 {
     protected TextChunker $chunker;
 
+    protected int $batchSize;
+
     public function __construct(?TextChunker $chunker = null)
     {
         $this->chunker = $chunker ?? new TextChunker;
+        $this->batchSize = (int) config('nativerag.embeddings.batch_size', 32);
     }
 
     /**
@@ -24,14 +27,12 @@ class EmbeddingService
         $content = $model->toEmbeddableString();
         $hash = md5($content);
 
-        // Early exit: if the content hash hasn't changed AND embeddings exist, skip.
         $existingEmbedding = $model->embeddings()->first();
 
         if ($existingEmbedding !== null && $existingEmbedding->hash === $hash) {
             return;
         }
 
-        // Wipe stale embeddings before re-indexing
         $model->embeddings()->delete();
 
         if (trim($content) === '') {
@@ -45,14 +46,17 @@ class EmbeddingService
 
         $embedder = NativeRag::embedding();
 
-        foreach ($chunks as $chunkContent) {
-            $vector = $embedder->embed($chunkContent);
+        // Batch embed to minimize HTTP round-trips
+        foreach (array_chunk($chunks, $this->batchSize) as $batch) {
+            $vectors = $embedder->embed($batch);
 
-            $model->embeddings()->create([
-                'chunk_content' => $chunkContent,
-                'embedding' => $vector,
-                'hash' => $hash,
-            ]);
+            foreach ($batch as $index => $chunkContent) {
+                $model->embeddings()->create([
+                    'chunk_content' => $chunkContent,
+                    'embedding' => $vectors[$index],
+                    'hash' => $hash,
+                ]);
+            }
         }
     }
 }

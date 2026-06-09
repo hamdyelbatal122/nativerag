@@ -18,8 +18,8 @@ class ConversationService
      */
     public function ask(NativeRagConversation $conversation, string $userMessage, array $options = []): NativeRagMessage
     {
-        // 1. Add user message
-        $conversation->addUserMessage($userMessage);
+        // 1. Add user message without pruning (we prune once at the end)
+        $conversation->addUserMessage($userMessage, prune: false);
 
         // 2. Compile full chat history for the driver
         $messages = $conversation->messagesForChat();
@@ -32,7 +32,7 @@ class ConversationService
 
         $chatResponse = $driver->chat($messages, $options);
 
-        // 4. Add assistant response
+        // 4. Add assistant response and prune once
         return $conversation->addAssistantMessage(
             content: $chatResponse->content,
             tokens: $chatResponse->completionTokens
