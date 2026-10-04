@@ -22,14 +22,14 @@ class EmbeddingService
     /**
      * Synchronize text chunks and their vector embeddings for a given embeddable model.
      */
-    public function sync(EmbeddableContract $model): void
+    public function sync(EmbeddableContract $model, bool $force = false): void
     {
         $content = $model->toEmbeddableString();
         $hash = md5($content);
 
         $existingEmbedding = $model->embeddings()->first();
 
-        if ($existingEmbedding !== null && $existingEmbedding->hash === $hash) {
+        if (! $force && $existingEmbedding !== null && $existingEmbedding->hash === $hash) {
             return;
         }
 

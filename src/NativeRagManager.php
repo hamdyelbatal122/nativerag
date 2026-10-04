@@ -72,4 +72,18 @@ class NativeRagManager extends Manager
         return $this->container->make(VectorSearchEngine::class)
             ->search($vector, $limit, $minScore);
     }
+
+    /**
+     * Perform a hybrid search combining vector similarity and keyword search via Reciprocal Rank Fusion.
+     *
+     * @return Collection<int, NativeRagEmbedding>
+     */
+    public function searchHybrid(string $query, int $limit = 5, ?float $minScore = null, int $rrfK = 60): Collection
+    {
+        /** @var array<float> $vector */
+        $vector = $this->embedding()->embed($query);
+
+        return $this->container->make(VectorSearchEngine::class)
+            ->searchHybrid($vector, $query, $limit, $minScore, $rrfK);
+    }
 }

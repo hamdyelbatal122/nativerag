@@ -160,4 +160,65 @@ class VectorSearchEngine
 
         return $dotProduct / (sqrt($normA) * sqrt($normB));
     }
+
+    /**
+     * Perform hybrid search combining vector similarity and keyword search via Reciprocal Rank Fusion (RRF).
+     *
+     * @param  array<float>  $queryEmbedding
+     * @return Collection<int, NativeRagEmbedding>
+     */
+    public function searchHybrid(array $queryEmbedding, string $queryText, int $limit = 5, ?float $minScore = null, int $rrfK = 60): Collection
+    {
+        $candidateLimit = max($limit * 3, 20);
+        $effectiveMinScore = $minScore ?? 0.0;
+
+        $vectorResults = $this->search($queryEmbedding, $candidateLimit, $effectiveMinScore);
+
+        $terms = array_filter(
+            preg_split('/\s+/', trim($queryText)) ?: [],
+            fn ($term) => mb_strlen($term, 'UTF-8') >= 2
+        );
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int, NativeRagEmbedding> $keywordResults */
+        $keywordResults = new \Illuminate\Database\Eloquent\Collection;
+        if (! empty($terms)) {
+            /** @var \Illuminate\Database\Eloquent\Collection<int, NativeRagEmbedding> $keywordResults */
+            $keywordResults = NativeRagEmbedding::query()
+                ->where(function ($query) use ($terms) {
+                    foreach ($terms as $term) {
+                        $query->orWhere('chunk_content', 'like', '%'.$term.'%');
+                    }
+                })
+                ->limit($candidateLimit)
+                ->get();
+        }
+
+        $scores = [];
+        $records = [];
+
+        foreach ($vectorResults as $rank => $record) {
+            $id = $record->id;
+            $records[$id] = $record;
+            $scores[$id] = ($scores[$id] ?? 0.0) + (1.0 / ($rrfK + $rank + 1));
+        }
+
+        foreach ($keywordResults as $rank => $record) {
+            $id = $record->id;
+            if (! isset($records[$id])) {
+                $records[$id] = $record;
+                $record->setAttribute('similarity', $this->cosineSimilarity($queryEmbedding, $record->embedding));
+            }
+            $scores[$id] = ($scores[$id] ?? 0.0) + (1.0 / ($rrfK + $rank + 1));
+        }
+
+        return collect($records)
+            ->map(function ($record) use ($scores) {
+                $record->setAttribute('hybrid_score', $scores[$record->id] ?? 0.0);
+
+                return $record;
+            })
+            ->sortByDesc('hybrid_score')
+            ->take($limit)
+            ->values();
+    }
 }

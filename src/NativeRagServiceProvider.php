@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hamzi\NativeRag;
 
+use Hamzi\NativeRag\Commands\HealthCheckCommand;
+use Hamzi\NativeRag\Commands\IndexCommand;
 use Illuminate\Support\ServiceProvider;
 
 class NativeRagServiceProvider extends ServiceProvider
@@ -36,6 +38,11 @@ class NativeRagServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../database/migrations/' => database_path('migrations'),
             ], 'nativerag-migrations');
+
+            $this->commands([
+                HealthCheckCommand::class,
+                IndexCommand::class,
+            ]);
         }
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');

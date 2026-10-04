@@ -25,5 +25,5 @@ interface EmbeddableContract
     /**
      * Synchronize the text chunks and their embeddings into the database.
      */
-    public function syncEmbeddings(): void;
+    public function syncEmbeddings(bool $force = false): void;
 }

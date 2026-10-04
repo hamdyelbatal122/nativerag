@@ -6,13 +6,16 @@ namespace Hamzi\NativeRag\Tests\Unit;
 
 use Hamzi\NativeRag\Contracts\EmbeddableContract;
 use Hamzi\NativeRag\Facades\NativeRag;
+use Hamzi\NativeRag\Jobs\SyncEmbeddingsJob;
 use Hamzi\NativeRag\Models\NativeRagEmbedding;
+use Hamzi\NativeRag\Services\EmbeddingService;
 use Hamzi\NativeRag\Services\VectorSearchEngine;
 use Hamzi\NativeRag\Tests\TestCase;
 use Hamzi\NativeRag\Traits\Embeddable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 
 class TestArticle extends Model implements EmbeddableContract
@@ -185,5 +188,75 @@ class VectorSearchTest extends TestCase
         $stringResults = NativeRag::search('How to build Laravel packages?', limit: 1);
         $this->assertCount(1, $stringResults);
         $this->assertSame('Laravel package development', $stringResults[0]->chunk_content);
+    }
+
+    public function test_search_hybrid_combines_vector_and_keyword_relevance(): void
+    {
+        Http::fake([
+            'http://localhost:11434/api/embed' => Http::response([
+                'embeddings' => [
+                    [1.0, 0.0],
+                ],
+            ], 200),
+        ]);
+
+        NativeRagEmbedding::create([
+            'embeddable_type' => 'App\\Models\\Doc',
+            'embeddable_id' => '1',
+            'chunk_content' => 'Redis caching architecture in Laravel',
+            'embedding' => [0.1, 0.9],
+            'hash' => 'hash_doc_1',
+        ]);
+
+        NativeRagEmbedding::create([
+            'embeddable_type' => 'App\\Models\\Doc',
+            'embeddable_id' => '2',
+            'chunk_content' => 'Vector similarity engines and AI models',
+            'embedding' => [0.95, 0.05],
+            'hash' => 'hash_doc_2',
+        ]);
+
+        $results = NativeRag::searchHybrid('Redis vector models', limit: 2);
+
+        $this->assertCount(2, $results);
+        $this->assertTrue($results->first()->similarity > 0);
+    }
+
+    public function test_embeddable_queue_dispatch(): void
+    {
+        Queue::fake();
+        config(['nativerag.queue.enabled' => true]);
+
+        $article = TestArticle::create([
+            'title' => 'Queued Article',
+            'body' => 'Should be processed in background queue.',
+        ]);
+
+        Queue::assertPushed(SyncEmbeddingsJob::class, function ($job) use ($article) {
+            return $job->model->getKey() === $article->getKey();
+        });
+    }
+
+    public function test_sync_embeddings_job_execution(): void
+    {
+        Http::fake([
+            'http://localhost:11434/api/embed' => Http::response([
+                'embeddings' => [
+                    [0.5, 0.5, 0.5],
+                ],
+            ], 200),
+        ]);
+
+        $article = TestArticle::create([
+            'title' => 'Job Execution Article',
+            'body' => 'Testing job execution.',
+        ]);
+
+        $job = new SyncEmbeddingsJob($article, force: true);
+        $job->handle(app(EmbeddingService::class));
+
+        $article->refresh();
+        $this->assertCount(1, $article->embeddings);
+        $this->assertSame([0.5, 0.5, 0.5], $article->embeddings->first()->embedding);
     }
 }

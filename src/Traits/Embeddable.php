@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hamzi\NativeRag\Traits;
 
+use Hamzi\NativeRag\Jobs\SyncEmbeddingsJob;
 use Hamzi\NativeRag\Models\NativeRagEmbedding;
 use Hamzi\NativeRag\Services\EmbeddingService;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,23 @@ trait Embeddable
     public static function bootEmbeddable(): void
     {
         static::saved(static function (self $model): void {
-            $model->syncEmbeddings();
+            if (config('nativerag.queue.enabled', false)) {
+                $job = new SyncEmbeddingsJob($model);
+
+                $connection = config('nativerag.queue.connection');
+                if ($connection !== null) {
+                    $job->onConnection((string) $connection);
+                }
+
+                $queue = config('nativerag.queue.queue');
+                if ($queue !== null) {
+                    $job->onQueue((string) $queue);
+                }
+
+                dispatch($job);
+            } else {
+                $model->syncEmbeddings();
+            }
         });
 
         static::deleted(static function (self $model): void {
@@ -48,8 +65,8 @@ trait Embeddable
         return $this->toJson();
     }
 
-    public function syncEmbeddings(): void
+    public function syncEmbeddings(bool $force = false): void
     {
-        app(EmbeddingService::class)->sync($this);
+        app(EmbeddingService::class)->sync($this, $force);
     }
 }

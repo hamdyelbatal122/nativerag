@@ -111,4 +111,19 @@ return [
         // Encrypt message contents in the database for extra security/privacy
         'encrypt_payloads' => (bool) env('NATIVE_RAG_ENCRYPT_PAYLOADS', false),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Asynchronous Queue Options
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, document chunking and vector embedding generation are
+    | dispatched to your queue workers instead of blocking HTTP requests.
+    |
+    */
+    'queue' => [
+        'enabled' => (bool) env('NATIVE_RAG_QUEUE_INDEXING', false),
+        'connection' => env('NATIVE_RAG_QUEUE_CONNECTION'),
+        'queue' => env('NATIVE_RAG_QUEUE_NAME', 'default'),
+    ],
 ];
