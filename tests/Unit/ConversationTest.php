@@ -8,8 +8,10 @@ use Hamzi\NativeRag\Contracts\ChatEngineContract;
 use Hamzi\NativeRag\Data\ChatResponse;
 use Hamzi\NativeRag\Facades\NativeRag;
 use Hamzi\NativeRag\Models\NativeRagConversation;
+use Hamzi\NativeRag\Models\NativeRagMessage;
 use Hamzi\NativeRag\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 class ConversationTest extends TestCase
 {
@@ -180,5 +182,75 @@ class ConversationTest extends TestCase
             'content' => 'This is the mocked response.',
             'tokens' => 20,
         ]);
+    }
+
+    public function test_pruning_preserves_system_message(): void
+    {
+        config(['nativerag.conversations.pruning_strategy' => 'count']);
+        config(['nativerag.conversations.max_history_count' => 2]);
+        config(['nativerag.conversations.preserve_system_messages' => true]);
+
+        $conversation = NativeRagConversation::create();
+
+        $conversation->addSystemMessage('You are a helpful assistant.');
+        $conversation->addMessage('user', 'Msg 1');
+        $conversation->addMessage('user', 'Msg 2');
+        $conversation->addMessage('user', 'Msg 3');
+
+        $messages = $conversation->messages()->oldest()->get();
+
+        // Should keep 1 system message + 2 latest user messages = 3
+        $this->assertCount(3, $messages);
+        $this->assertSame('system', $messages[0]->role);
+        $this->assertSame('You are a helpful assistant.', $messages[0]->content);
+        $this->assertSame('Msg 2', $messages[1]->content);
+        $this->assertSame('Msg 3', $messages[2]->content);
+    }
+
+    public function test_pruning_removes_system_message_when_preserve_is_disabled(): void
+    {
+        config(['nativerag.conversations.pruning_strategy' => 'count']);
+        config(['nativerag.conversations.max_history_count' => 2]);
+        config(['nativerag.conversations.preserve_system_messages' => false]);
+
+        $conversation = NativeRagConversation::create();
+
+        $conversation->addSystemMessage('You are a helpful assistant.');
+        $conversation->addMessage('user', 'Msg 1');
+        $conversation->addMessage('user', 'Msg 2');
+
+        $messages = $conversation->messages()->oldest()->get();
+
+        // Without preservation, system message is pruned because only 2 latest messages are kept
+        $this->assertCount(2, $messages);
+        $this->assertSame('Msg 1', $messages[0]->content);
+        $this->assertSame('Msg 2', $messages[1]->content);
+    }
+
+    public function test_encrypted_payloads(): void
+    {
+        config(['app.key' => 'base64:'.base64_encode(random_bytes(32))]);
+        config(['nativerag.conversations.encrypt_payloads' => true]);
+
+        $conversation = NativeRagConversation::create([
+            'metadata' => ['secret_key' => 'confidential_info'],
+        ]);
+
+        $message = $conversation->addUserMessage('Secret secret prompt', ['tag' => 'private']);
+
+        // Directly query DB using raw PDO to verify encryption at rest
+        $rawMessage = DB::table('nativerag_messages')
+            ->where('id', $message->id)
+            ->first();
+
+        $this->assertNotNull($rawMessage);
+        $this->assertNotSame('Secret secret prompt', $rawMessage->content);
+        $this->assertStringNotContainsString('Secret secret prompt', $rawMessage->content);
+
+        // Fetching through Eloquent decrypts automatically
+        $retrievedMessage = NativeRagMessage::find($message->id);
+        $this->assertNotNull($retrievedMessage);
+        $this->assertSame('Secret secret prompt', $retrievedMessage->content);
+        $this->assertSame(['tag' => 'private'], $retrievedMessage->metadata);
     }
 }

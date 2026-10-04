@@ -2,14 +2,19 @@
 
 ## Supported Versions
 
-Currently, the following versions of **Laravel NativeRAG** are supported with security updates:
+We provide security updates for the following versions of **Laravel NativeRAG**:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
+| Version | Supported |
+|---------|-----------|
+| 1.1.x   | Yes       |
+| 1.0.x   | Yes       |
 
 ## Reporting a Vulnerability
 
-If you discover any security-related issues, please email **hamzi@example.com** instead of using the public issue tracker. 
+If you discover a security vulnerability within NativeRAG, please send an email to **hamdyelbatal@hamzi.dev** instead of filing a public issue.
 
-All security vulnerabilities will be promptly addressed. Once we verify the vulnerability, we will release an update and credit you in the release notes.
+Please include:
+- A description of the issue and its potential impact.
+- Steps to reproduce or a minimal proof of concept.
+
+We will acknowledge receipt of your report, investigate the issue, and release a fix as soon as possible. Thank you for helping keep NativeRAG and its users secure!

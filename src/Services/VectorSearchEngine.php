@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 class VectorSearchEngine
 {
-    protected static bool $sqliteFunctionRegistered = false;
+    /** @var array<int, bool> */
+    protected static array $registeredPdoIds = [];
 
     /**
      * Search the database for the most similar chunks based on the provided embedding vector.
@@ -32,7 +33,7 @@ class VectorSearchEngine
 
     /**
      * Portable mathematical calculation pulling embeddings into a lazy collection and scoring via PHP.
-     * Extremely compatible across any database driver (SQLite, MySQL, SQL Server) without special extensions.
+     * Compatible across any database driver (SQLite, MySQL, SQL Server) without special extensions.
      *
      * @param  array<float>  $queryEmbedding
      * @return Collection<int, NativeRagEmbedding>
@@ -41,7 +42,7 @@ class VectorSearchEngine
     {
         $results = collect();
 
-        // Use cursor to avoid loading all massive JSON embeddings into memory at once
+        // Use cursor to avoid loading all large JSON embeddings into memory at once
         foreach (NativeRagEmbedding::query()->cursor() as $record) {
             $recordEmbedding = $record->embedding;
 
@@ -62,9 +63,9 @@ class VectorSearchEngine
     }
 
     /**
-     * Optimized raw database queries mapping cosine similarity math directly to SQL.
-     * Requires the DB engine to support JSON array extraction or relies on pgvector if configured.
-     * We use a unified fallback that delegates to the collection approach if SQL math is too complex for the active driver.
+     * Database queries mapping cosine similarity math to SQL.
+     * Uses pgvector on PostgreSQL and custom PDO functions on SQLite,
+     * falling back to PHP collection calculation if needed.
      *
      * @param  array<float>  $queryEmbedding
      * @return Collection<int, NativeRagEmbedding>
@@ -89,7 +90,7 @@ class VectorSearchEngine
                     ->get();
 
                 return $results;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Fallback to PHP computation if pgvector extension is missing
                 return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
             }
@@ -99,8 +100,9 @@ class VectorSearchEngine
         if ($driver === 'sqlite') {
             try {
                 $pdo = $connection->getPdo();
+                $pdoId = spl_object_id($pdo);
 
-                if (! self::$sqliteFunctionRegistered) {
+                if (! isset(self::$registeredPdoIds[$pdoId])) {
                     $pdo->sqliteCreateFunction('cosine_similarity', function ($a, $b) {
                         $vecA = json_decode((string) $a, true);
                         $vecB = json_decode((string) $b, true);
@@ -111,7 +113,7 @@ class VectorSearchEngine
 
                         return $this->cosineSimilarity($vecA, $vecB);
                     }, 2);
-                    self::$sqliteFunctionRegistered = true;
+                    self::$registeredPdoIds[$pdoId] = true;
                 }
 
                 /** @var Collection<int, NativeRagEmbedding> $results */
@@ -123,15 +125,12 @@ class VectorSearchEngine
                     ->get();
 
                 return $results;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
             }
         }
 
-        // Standard MySQL/SQLite math for JSON arrays is extremely complex to write dynamically
-        // without knowing vector dimensions. For robust "Zero-Infra" out-of-the-box usage,
-        // we heavily optimize by falling back to collection cursor filtering which works flawlessly
-        // across all schema setups without needing DB extensions.
+        // For other databases without native vector extensions, use the collection strategy
         return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
     }
 
@@ -144,11 +143,14 @@ class VectorSearchEngine
      */
     protected function cosineSimilarity(array $a, array $b): float
     {
+        $count = min(count($a), count($b));
+        if ($count === 0) {
+            return 0.0;
+        }
+
         $dotProduct = 0.0;
         $normA = 0.0;
         $normB = 0.0;
-
-        $count = min(count($a), count($b));
 
         for ($i = 0; $i < $count; $i++) {
             $valA = (float) $a[$i];
@@ -159,7 +161,7 @@ class VectorSearchEngine
             $normB += $valB ** 2;
         }
 
-        if ($normA === 0.0 || $normB === 0.0) {
+        if ($normA <= 0.0 || $normB <= 0.0) {
             return 0.0;
         }
 

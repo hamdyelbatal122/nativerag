@@ -57,14 +57,29 @@ class NativeRagConversation extends Model
     public function pruneHistory(): void
     {
         $strategy = config('nativerag.conversations.pruning_strategy', 'count');
+        $preserveSystem = (bool) config('nativerag.conversations.preserve_system_messages', true);
 
         if ($strategy === 'count') {
             $maxHistory = (int) config('nativerag.conversations.max_history_count', 10);
 
-            $idsToKeep = $this->messages()
-                ->latest()
+            $query = $this->messages();
+            if ($preserveSystem) {
+                $query = $query->where('role', '!=', 'system');
+            }
+
+            /** @var array<int, string> $idsToKeep */
+            $idsToKeep = $query->latest()
                 ->limit($maxHistory)
-                ->pluck('id');
+                ->pluck('id')
+                ->all();
+
+            if ($preserveSystem) {
+                $systemIds = $this->messages()
+                    ->where('role', 'system')
+                    ->pluck('id')
+                    ->all();
+                $idsToKeep = array_merge($idsToKeep, $systemIds);
+            }
 
             $this->messages()
                 ->whereNotIn('id', $idsToKeep)
@@ -74,14 +89,25 @@ class NativeRagConversation extends Model
             $totalTokens = 0;
             $idsToKeep = [];
 
-            // Fetch messages from latest to oldest
-            $messages = $this->messages()->latest()->get();
+            if ($preserveSystem) {
+                $systemMessages = $this->messages()->where('role', 'system')->get();
+                foreach ($systemMessages as $sysMsg) {
+                    $sysTokens = $sysMsg->tokens ?? (int) ceil(mb_strlen($sysMsg->content, 'UTF-8') / 4);
+                    $idsToKeep[] = $sysMsg->id;
+                    $totalTokens += $sysTokens;
+                }
+            }
+
+            $messagesQuery = $this->messages();
+            if ($preserveSystem) {
+                $messagesQuery = $messagesQuery->where('role', '!=', 'system');
+            }
+            $messages = $messagesQuery->latest()->get();
 
             foreach ($messages as $message) {
-                // Heuristic approximation if tokens column is not filled: 1 token ~ 4 characters
                 $msgTokens = $message->tokens ?? (int) ceil(mb_strlen($message->content, 'UTF-8') / 4);
 
-                // Always keep at least the latest message
+                // Keep message if it fits within token budget or if no non-system message kept yet
                 if (empty($idsToKeep) || ($totalTokens + $msgTokens) <= $maxTokens) {
                     $idsToKeep[] = $message->id;
                     $totalTokens += $msgTokens;

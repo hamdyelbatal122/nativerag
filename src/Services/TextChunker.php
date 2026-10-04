@@ -13,6 +13,14 @@ class TextChunker
      */
     public function chunk(string $text, int $chunkSize = 1000, int $overlap = 200): array
     {
+        if ($chunkSize <= 0) {
+            throw new \InvalidArgumentException('Chunk size must be greater than zero.');
+        }
+
+        if ($overlap < 0 || $overlap >= $chunkSize) {
+            throw new \InvalidArgumentException('Overlap must be non-negative and smaller than chunk size.');
+        }
+
         $text = trim($text);
 
         if ($text === '') {

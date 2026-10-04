@@ -1,6 +1,6 @@
 <p align="center">
   <h1 align="center">🧠 Laravel NativeRAG</h1>
-  <p align="center">A world-class, production-ready Local AI & RAG Engine for Laravel 11, 12 & 13</p>
+  <p align="center">A privacy-first Local AI & Retrieval-Augmented Generation (RAG) engine for Laravel 11, 12, and 13</p>
 </p>
 
 <p align="center">
@@ -14,9 +14,9 @@
 
 ---
 
-**Laravel NativeRAG** empowers you to run fully **localized, privacy-first AI workflows** using models hosted in [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/) — directly from your Laravel application.
+**NativeRAG** allows you to run **localized, privacy-first AI workflows** using models hosted in [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/) directly from your Laravel application.
 
-No OpenAI keys. No Pinecone. No cloud data leaks. **100% data residency. Zero external dependencies.**
+No third-party cloud API keys. No external vector databases. **100% data residency with zero external infrastructure.**
 
 ---
 
@@ -24,14 +24,13 @@ No OpenAI keys. No Pinecone. No cloud data leaks. **100% data residency. Zero ex
 
 | Feature | Details |
 |---|---|
-| 🤖 **Multi-Driver LLM** | Switch between Ollama & LM Studio via Laravel's Manager pattern |
-| 🗄️ **Zero-Infra Vector Search** | Cosine Similarity powered by PHP + native SQL. No Pinecone needed |
-| ⚡ **SSE Streaming** | Real-time token streaming to Alpine.js / Livewire frontends |
-| 🧩 **Auto-Embedding Trait** | Add `Embeddable` to any Eloquent model for automatic vector indexing |
-| 🧠 **Persistent Memory** | Multi-turn chat history with sliding-window pruning |
-| 🔒 **Payload Encryption** | Encrypt stored chat history using Laravel's App Key |
-| 🛡️ **Strict Types** | PHP 8.2+ with `declare(strict_types=1)`, Readonly DTOs, Enums |
-| 🐘 **pgvector Support** | Native PostgreSQL pgvector cosine distance queries |
+| 🤖 **Multi-Driver LLM** | Switch seamlessly between Ollama and LM Studio via Laravel's Manager pattern |
+| 🗄️ **Zero-Infra Vector Search** | Built-in cosine similarity powered by SQLite PDO functions, PostgreSQL pgvector, or PHP collections |
+| ⚡ **SSE Streaming** | Real-time token streaming responses ready for Alpine.js, Livewire, or vanilla JavaScript |
+| 🧩 **Auto-Embedding Trait** | Add `Embeddable` to any Eloquent model for automatic chunking and vector indexing on save |
+| 🧠 **Persistent Memory** | Multi-turn chat conversations with sliding-window history pruning and system prompt preservation |
+| 🔒 **Payload Encryption** | Optional AES-256 encryption for stored chat messages and metadata using your Laravel application key |
+| 🛡️ **Modern PHP & Strict Types** | Full PHP 8.2+ compatibility with `declare(strict_types=1)`, readonly DTOs, and static analysis (PHPStan Level 6) |
 
 ---
 
@@ -39,19 +38,21 @@ No OpenAI keys. No Pinecone. No cloud data leaks. **100% data residency. Zero ex
 
 | Laravel | PHP | Status |
 |---------|-----|--------|
-| 13.x | 8.2, 8.3, 8.4, 8.5 | ✅ Fully Supported |
-| 12.x | 8.2, 8.3, 8.4, 8.5 | ✅ Fully Supported |
-| 11.x | 8.2, 8.3, 8.4, 8.5 | ✅ Fully Supported |
+| 13.x | 8.2, 8.3, 8.4, 8.5 | ✅ Supported |
+| 12.x | 8.2, 8.3, 8.4, 8.5 | ✅ Supported |
+| 11.x | 8.2, 8.3, 8.4, 8.5 | ✅ Supported |
 
 ---
 
 ## 🚀 Installation
 
+Install the package via Composer:
+
 ```bash
 composer require hamzi/nativerag
 ```
 
-Publish configuration and migrations:
+Publish the configuration and migrations:
 
 ```bash
 php artisan vendor:publish --tag="nativerag-config"
@@ -63,24 +64,30 @@ php artisan migrate
 
 ## 🛠️ Configuration
 
-Set your driver settings in `.env`:
+Configure your local models and retrieval settings in `.env`:
 
 ```env
 NATIVE_RAG_DRIVER=ollama
 
-# Ollama
+# Ollama Settings
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_CHAT_MODEL=llama3
 OLLAMA_EMBEDDING_MODEL=nomic-embed-text
 
-# LM Studio
+# LM Studio Settings
 LMSTUDIO_BASE_URL=http://localhost:1234
 LMSTUDIO_CHAT_MODEL=meta-llama-3-8b-instruct
+LMSTUDIO_EMBEDDING_MODEL=nomic-embed-text
 
 # Chunking & Retrieval
 NATIVE_RAG_CHUNK_SIZE=1000
 NATIVE_RAG_CHUNK_OVERLAP=200
 NATIVE_RAG_MIN_SCORE=0.35
+
+# Conversation Memory
+NATIVE_RAG_MAX_HISTORY_COUNT=10
+NATIVE_RAG_PRUNING_STRATEGY=count
+NATIVE_RAG_PRESERVE_SYSTEM_MESSAGES=true
 
 # Security
 NATIVE_RAG_ENCRYPT_PAYLOADS=false
@@ -96,12 +103,12 @@ NATIVE_RAG_ENCRYPT_PAYLOADS=false
 use Hamzi\NativeRag\Facades\NativeRag;
 
 $response = NativeRag::chat([
-    ['role' => 'system', 'content' => 'You are a senior Laravel engineer.'],
-    ['role' => 'user',   'content' => 'Explain service containers briefly.'],
+    ['role' => 'system', 'content' => 'You are a helpful software architect.'],
+    ['role' => 'user',   'content' => 'Explain service containers simply.'],
 ]);
 
-echo $response->content;        // The generated text
-echo $response->promptTokens;   // Input tokens used
+echo $response->content;          // Generated text
+echo $response->promptTokens;     // Input tokens used
 echo $response->completionTokens; // Output tokens generated
 ```
 
@@ -113,39 +120,43 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/api/ai/stream', function () {
     return NativeRag::stream([
-        ['role' => 'user', 'content' => 'Write a comprehensive guide on Eloquent ORM.'],
+        ['role' => 'user', 'content' => 'Write a short overview of Laravel Eloquent.'],
     ]);
 });
 ```
 
-**Consume in JavaScript (Alpine.js / Vanilla):**
+**Consume in JavaScript (EventSource / Fetch):**
 
 ```js
 const source = new EventSource('/api/ai/stream');
+
 source.onmessage = ({ data }) => {
     const { content, done } = JSON.parse(data);
-    if (done) { source.close(); return; }
+    if (done) {
+        source.close();
+        return;
+    }
     document.querySelector('#output').insertAdjacentText('beforeend', content);
 };
 ```
 
-### 3. Embeddable Models (Auto-Indexing)
+### 3. Embeddable Models (Automatic Indexing)
 
-To enable automatic vector indexing, implement the `EmbeddableContract` interface and use the `Embeddable` trait on any Eloquent model. Whenever the model is saved, its content is automatically chunked, embedded locally, and synchronized in the database.
+Implement `EmbeddableContract` and use the `Embeddable` trait on any Eloquent model. When saved, the model's text is automatically chunked, embedded locally, and synchronized in the database. If unchanged, duplicate embeddings are skipped via MD5 hashing.
 
 ```php
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Hamzi\NativeRag\Contracts\EmbeddableContract;
 use Hamzi\NativeRag\Traits\Embeddable;
+use Illuminate\Database\Eloquent\Model;
 
 class Article extends Model implements EmbeddableContract
 {
     use Embeddable;
 
     /**
-     * Define the text payload the AI engine will index.
+     * Define the text content to be indexed.
      */
     public function toEmbeddableString(): string
     {
@@ -156,62 +167,61 @@ class Article extends Model implements EmbeddableContract
 
 ### 4. Semantic Vector Search
 
+You can search indexed chunks using either raw text queries or pre-calculated vector arrays:
+
 ```php
-use Hamzi\NativeRag\Services\VectorSearchEngine;
 use Hamzi\NativeRag\Facades\NativeRag;
 
-// 1. Embed the user's question
-$queryVector = NativeRag::embedding()->embed('How does quantum physics relate to computing?');
-
-// 2. Search native database for closest chunks
-$engine = new VectorSearchEngine();
-$results = $engine->search($queryVector, limit: 5, minScore: 0.50);
+// Search directly using a question string (automatically embeds the query)
+$results = NativeRag::search('How does database indexing work?', limit: 5, minScore: 0.40);
 
 foreach ($results as $chunk) {
     echo $chunk->chunk_content; // Matching text passage
-    echo $chunk->similarity;    // Score: 0.0 – 1.0
+    echo $chunk->similarity;    // Cosine similarity score (0.0 to 1.0)
 }
+
+// Or pass a raw vector array directly
+$vector = NativeRag::embedding()->embed('Query text');
+$results = NativeRag::search($vector, limit: 5);
 ```
 
 ### 5. Persistent Multi-Turn Conversations
 
-Easily build persistent chat experiences with built-in sliding-window memory pruning (supporting both message `count` limits and max `token` thresholds).
+Build interactive chat experiences with persistent database storage and automatic history pruning:
 
 ```php
 use Hamzi\NativeRag\Models\NativeRagConversation;
 
-// 1. Create or retrieve a conversation session
+// 1. Create a conversation session
 $conversation = NativeRagConversation::create([
-    'name' => 'Support Session #123',
+    'name' => 'Project Architecture Chat',
 ]);
 
-// 2. Add system context (Optional)
-$conversation->addSystemMessage('You are a helpful customer support agent.');
+// 2. Set system instructions
+$conversation->addSystemMessage('You are an expert Laravel developer.');
 
-// 3. Ask a question (automatically sends message history to LLM, stores the response, and runs auto-pruning)
-$assistantResponse = $conversation->ask('Can you explain how to set up NativeRAG?');
+// 3. Ask a question (saves both messages and returns the assistant response)
+$response = $conversation->ask('How should I structure my repository?');
+echo $response->content;
 
-echo $assistantResponse->content; // The generated assistant response
-
-// 4. Follow up (the previous system instruction and chat history are sent automatically)
-$followUpResponse = $conversation->ask('Does it support LM Studio too?');
-
-echo $followUpResponse->content;
+// 4. Continue the chat with full context retained
+$followUp = $conversation->ask('Can you show a code example?');
+echo $followUp->content;
 ```
 
 #### Memory Pruning Strategies
-Control how history is pruned to stay within context windows:
-- **`count` (Default)**: Keeps the last `N` messages.
-- **`token`**: Keeps the most recent messages up to a custom token threshold (e.g. 4096 tokens). It calculates tokens dynamically using the DB record or falls back to an exact UTF-8 character length approximation (`ceil(chars / 4)`).
+- **`count` (Default)**: Keeps the last `N` messages in active context.
+- **`token`**: Keeps messages up to a specified token threshold (approximated at `ceil(chars / 4)` if exact tokens are unavailable).
+- **System Prompt Preservation**: Enabled by default (`preserve_system_messages => true`), ensuring initial system prompts remain intact regardless of conversation length.
 
-### 6. Switch Driver at Runtime
+### 6. Switch Drivers at Runtime
 
 ```php
 use Hamzi\NativeRag\Facades\NativeRag;
 
-// Use LM Studio for this specific call
+// Use LM Studio for a specific request
 $response = NativeRag::driver('lmstudio')->chat([
-    ['role' => 'user', 'content' => 'Summarize this document.'],
+    ['role' => 'user', 'content' => 'Summarize this file.'],
 ]);
 ```
 
@@ -219,23 +229,23 @@ $response = NativeRag::driver('lmstudio')->chat([
 
 ## 🔒 Security & Privacy
 
-- **100% On-Premise:** All inference runs against Ollama/LM Studio on your own hardware. Zero network calls leave your server.
-- **Payload Encryption:** Enable `NATIVE_RAG_ENCRYPT_PAYLOADS=true` to encrypt all stored chat content and metadata using Laravel's native AES-256-CBC encryption.
-- **SQL Injection Safe:** Strictly uses Laravel's parameterized query builder with no raw string interpolations.
-- **Change Detection:** MD5 content hashing prevents re-embedding unchanged documents — eliminating redundant local API calls.
+- **Local Inference:** All LLM prompts and embeddings run against your self-hosted Ollama or LM Studio instance. No data is transmitted to external cloud APIs.
+- **Payload Encryption:** When enabled (`NATIVE_RAG_ENCRYPT_PAYLOADS=true`), chat messages and metadata are encrypted in the database using Laravel's native encryption.
+- **Safe Queries:** Uses parameterized database queries and prepared statements throughout.
+- **Hash Change Detection:** MD5 checksums prevent re-embedding unchanged documents.
 
 ---
 
 ## 🧪 Testing & Code Quality
 
 ```bash
-# Run tests
+# Run unit tests
 composer test
 
-# Run code style fixer
+# Format code style (Laravel Pint)
 composer lint
 
-# Run static analysis (PHPStan Level 6)
+# Static analysis (PHPStan Level 6)
 composer analyse
 ```
 
@@ -243,16 +253,12 @@ composer analyse
 
 ## 🤝 Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on our workflow and pull request guidelines.
 
 ## 🛡️ Security Vulnerabilities
 
-Please review the [SECURITY.md](SECURITY.md) policy to learn how to responsibly report a vulnerability.
+If you discover a security vulnerability, please review [SECURITY.md](SECURITY.md) for responsible disclosure instructions.
 
 ## 📄 License
 
-The MIT License (MIT). Please see [LICENSE.md](LICENSE.md) for more information.
-
----
-
-
+The MIT License (MIT). Please see [LICENSE.md](LICENSE.md) for details.

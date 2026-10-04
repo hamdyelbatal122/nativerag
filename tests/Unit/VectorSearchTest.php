@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hamzi\NativeRag\Tests\Unit;
 
 use Hamzi\NativeRag\Contracts\EmbeddableContract;
+use Hamzi\NativeRag\Facades\NativeRag;
 use Hamzi\NativeRag\Models\NativeRagEmbedding;
 use Hamzi\NativeRag\Services\VectorSearchEngine;
 use Hamzi\NativeRag\Tests\TestCase;
@@ -160,5 +161,36 @@ class VectorSearchTest extends TestCase
 
         $this->assertSame('Vector A', $results[1]->chunk_content);
         $this->assertEqualsWithDelta(0.0, $results[1]->similarity, 0.001);
+    }
+
+    public function test_facade_search_with_vector_and_string(): void
+    {
+        config(['nativerag.embeddings.search_strategy' => 'collection']);
+
+        NativeRagEmbedding::create([
+            'embeddable_type' => 'App\\Models\\Dummy',
+            'embeddable_id' => '1',
+            'chunk_content' => 'Laravel package development',
+            'embedding' => [0.9, 0.1],
+            'hash' => 'hash_1',
+        ]);
+
+        // 1. Search directly with vector
+        $vectorResults = NativeRag::search([0.9, 0.1], limit: 1);
+        $this->assertCount(1, $vectorResults);
+        $this->assertSame('Laravel package development', $vectorResults[0]->chunk_content);
+
+        // 2. Search with raw text query (auto-embeds)
+        Http::fake([
+            'http://localhost:11434/api/embed' => Http::response([
+                'embeddings' => [
+                    [0.9, 0.1],
+                ],
+            ], 200),
+        ]);
+
+        $stringResults = NativeRag::search('How to build Laravel packages?', limit: 1);
+        $this->assertCount(1, $stringResults);
+        $this->assertSame('Laravel package development', $stringResults[0]->chunk_content);
     }
 }

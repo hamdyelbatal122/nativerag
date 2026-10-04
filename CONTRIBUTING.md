@@ -1,36 +1,54 @@
-# Contributing
+# Contributing to NativeRAG
 
-Contributions are **welcome** and will be fully **credited**.
+Thank you for considering contributing to **NativeRAG**! We appreciate bug reports, feature suggestions, documentation improvements, and code contributions.
 
-Please read and understand the contribution guide before creating an issue or pull request.
+## Code of Conduct
 
-## Etiquette
+Please be respectful and considerate in all interactions within this project.
 
-This project is open source, and as such, the maintainers give their free time to build and maintain the source code held within. They make the code freely available in the hope that it will be of use to other developers.
+## Getting Started
 
-## Development
+1. Fork and clone the repository:
 
-To get started, simply clone the repository, install dependencies using Composer, and run tests.
+   ```bash
+   git clone https://github.com/hamdyelbatal122/nativerag.git
+   cd nativerag
+   ```
 
-```bash
-git clone git@github.com:hamzi/nativerag.git
-cd nativerag
-composer install
-composer test
-```
+2. Install dependencies via Composer:
 
-## Pull Requests
+   ```bash
+   composer install
+   ```
 
-- **PSR-12 Coding Standard** - The easiest way to apply the conventions is to install PHP CS Fixer.
-- **Add tests!** - Your patch won't be accepted if it doesn't have tests.
-- **Document any change in behaviour** - Make sure the `README.md` and any other relevant documentation are kept up-to-date.
-- **Create feature branches** - Don't ask us to pull from your master branch.
-- **One pull request per feature** - If you want to do more than one thing, send multiple pull requests.
+3. Run the test suite:
 
-## Running Tests
+   ```bash
+   composer test
+   ```
 
-We use PHPUnit.
+## Development Workflow
 
-```bash
-composer test
-```
+Before submitting a pull request, please make sure your changes pass all quality checks:
+
+- **Run tests:**
+  ```bash
+  composer test
+  ```
+
+- **Format code (Laravel Pint):**
+  ```bash
+  composer lint
+  ```
+
+- **Run static analysis (PHPStan):**
+  ```bash
+  composer analyse
+  ```
+
+## Pull Request Guidelines
+
+- **Focus**: Keep each pull request focused on a single bug fix or feature.
+- **Tests**: Include automated tests covering new features or bug fixes.
+- **Documentation**: Update `README.md` or configuration docblocks if your change adds or alters functionality.
+- **Branching**: Create a meaningful branch name (e.g., `fix/sqlite-reconnection` or `feat/vector-search-helper`) rather than working directly on `master`.

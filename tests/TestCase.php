@@ -10,8 +10,6 @@ use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
 {
-    public static $latestResponse;
-
     /**
      * @param  Application  $app
      * @return array<int, class-string>

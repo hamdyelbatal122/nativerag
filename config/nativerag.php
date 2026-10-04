@@ -105,6 +105,9 @@ return [
         // Limit context if using token pruning strategy
         'max_tokens_threshold' => (int) env('NATIVE_RAG_MAX_TOKENS_THRESHOLD', 4096),
 
+        // Preserve system instruction messages from being pruned during history trimming
+        'preserve_system_messages' => (bool) env('NATIVE_RAG_PRESERVE_SYSTEM_MESSAGES', true),
+
         // Encrypt message contents in the database for extra security/privacy
         'encrypt_payloads' => (bool) env('NATIVE_RAG_ENCRYPT_PAYLOADS', false),
     ],

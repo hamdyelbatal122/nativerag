@@ -88,6 +88,10 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
                 ->withOptions(['stream' => true])
                 ->post("{$this->baseUrl}/api/chat", $payload);
 
+            if ($response->failed()) {
+                $response->throw();
+            }
+
             $body = $response->toPsrResponse()->getBody();
 
             $buffer = '';
@@ -135,10 +139,7 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
      */
     public function embed(string|array $text, array $options = []): array
     {
-        // For a single string, Ollama's /api/embeddings endpoint was traditional,
-        // but recent versions support /api/embed for multiple inputs.
-        // We will use /api/embed which accepts `input` as string or array of strings.
-
+        // Ollama supports /api/embed which accepts `input` as string or array of strings.
         $payload = [
             'model' => $this->embeddingModel,
             'input' => is_array($text) ? array_values($text) : [$text],
@@ -148,14 +149,10 @@ class OllamaDriver implements ChatEngineContract, EmbeddingEngineContract
         $response = $this->client()->post("{$this->baseUrl}/api/embed", $payload)->throw();
         $data = $response->json();
 
-        // The response contains an "embeddings" array
-        // E.g., [ [0.1, 0.2, ...], [0.3, 0.4, ...] ]
         $embeddings = $data['embeddings'] ?? [];
 
-        // If the user passed a single string, return the single vector array for convenience,
-        // unless they explicitly requested multiple inputs.
-        if (is_string($text) && count($embeddings) === 1) {
-            return $embeddings[0];
+        if (is_string($text)) {
+            return $embeddings[0] ?? [];
         }
 
         return $embeddings;

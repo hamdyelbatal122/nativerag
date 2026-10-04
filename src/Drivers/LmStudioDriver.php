@@ -86,6 +86,10 @@ class LmStudioDriver implements ChatEngineContract, EmbeddingEngineContract
                 ->withOptions(['stream' => true])
                 ->post("{$this->baseUrl}/v1/chat/completions", $payload);
 
+            if ($response->failed()) {
+                $response->throw();
+            }
+
             $body = $response->toPsrResponse()->getBody();
 
             $buffer = '';
@@ -166,8 +170,8 @@ class LmStudioDriver implements ChatEngineContract, EmbeddingEngineContract
             }
         }
 
-        if (is_string($text) && count($embeddings) === 1) {
-            return $embeddings[0];
+        if (is_string($text)) {
+            return $embeddings[0] ?? [];
         }
 
         return $embeddings;

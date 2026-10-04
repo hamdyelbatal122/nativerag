@@ -4,113 +4,78 @@ All notable changes to `hamzi/nativerag` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-10-04
+
+### Added
+- Added `NativeRag::search()` helper method to `NativeRagManager` and the `NativeRag` facade for direct semantic search with raw text or vector embeddings.
+- Added `preserve_system_messages` option in `config/nativerag.php` to prevent system instructions from being pruned in long-running chats.
+- Added unit tests for encrypted payloads (`encrypt_payloads`) and system message preservation during history pruning.
+
+### Fixed
+- Fixed SQLite custom function registration in `VectorSearchEngine` to track registered PDO instances dynamically instead of using a global static boolean, avoiding missing function errors upon database reconnection.
+- Improved exception handling across `VectorSearchEngine` by catching `\Throwable` instead of `\Exception` to gracefully handle PDO driver errors and fall back to collection search.
+- Added HTTP failure checks (`throw()`) in `stream()` methods for both `OllamaDriver` and `LmStudioDriver` to surface connection errors promptly.
+- Added input validation in `TextChunker` for non-positive chunk size and invalid overlap parameters.
+- Cleaned up unneeded debug artifacts and unused properties in test fixtures.
+
+## [1.1.0] - 2026-05-20
+
+### Added
+- Support for LM Studio embeddings endpoint (`/v1/embeddings`).
+- Flexible memory pruning strategies: `count` (sliding window) and `token` (token threshold with fallback character approximation).
+- Batch embedding support in `EmbeddingService` to minimize HTTP round-trips when chunking large models.
+- Direct SQLite PDO function integration (`cosine_similarity`) for zero-dependency local vector math.
+- Configurable database connection for embeddings via `nativerag.embeddings.connection`.
+
+### Changed
+- Refactored embedding synchronization to use a dedicated `EmbeddingService` for cleaner architecture and separation of concerns.
+- Streamlined chat orchestration through `ConversationService`.
+- Enhanced static analysis coverage with PHPStan Level 6 and Pint styling.
+
 ## [1.0.3] - 2026-05-19
 
 ### Added
 - Added official support for **PHP 8.5** (`^8.2|^8.5` in `composer.json`).
-- Included **PHP 8.5** in the GitHub Actions CI matrix to automatically test against Laravel 11/12/13.
-- Updated compatibility matrix in documentation.
+- Included **PHP 8.5** in the GitHub Actions CI matrix to test against Laravel 11/12/13.
 - Added comprehensive unit tests for `PackageInstallTest`, `TextChunkerTest`, and `PromptCompilerTest` using Orchestra Testbench.
 
 ## [1.0.2] - 2026-05-19
 
 ### Fixed
-- **[CRITICAL]** Removed conflicting `protected $casts = [...]` property from `NativeRagConversation` that clashed with the `casts()` method — caused unpredictable behavior in Laravel 12+ where `casts()` is the canonical approach.
-- Fixed `Embeddable::bootEmbeddable()` callbacks to use `self` type hint instead of `Model`, ensuring correct static resolution and full PHPStan compatibility.
-- Removed redundant double `count()` query in `syncEmbeddings()` — now uses a single `first()` check for hash comparison (2× fewer DB queries per save).
-- Fixed generic type hints: `HasMany<NativeRagMessage, $this>`, `BelongsTo<NativeRagConversation, $this>`, `MorphMany<NativeRagEmbedding, $this>` for PHPStan Level 6 compliance.
+- Removed conflicting `protected $casts = [...]` property from `NativeRagConversation` that clashed with the `casts()` method in Laravel 11+.
+- Fixed `Embeddable::bootEmbeddable()` callbacks to use `self` type hint.
+- Optimized `syncEmbeddings()` to use a single `first()` check for hash comparison.
+- Fixed generic type hints: `HasMany<NativeRagMessage, $this>`, `BelongsTo<NativeRagConversation, $this>`, `MorphMany<NativeRagEmbedding, $this>` for PHPStan compliance.
 - Cast `config()` return values to `int` in `pruneHistory()` and `syncEmbeddings()` to prevent type coercion warnings in strict mode.
 
 ### Added
-- Full **PHP 8.4** support added to GitHub Actions CI matrix (now tests PHP 8.2, 8.3, 8.4 × Laravel 11/12/13).
-- Updated compatibility table in `README.md` to reflect PHP 8.4 support.
+- Full **PHP 8.4** support added to GitHub Actions CI matrix.
 
 ## [1.0.1] - 2026-05-19
 
 ### Added
-- Full support for **Laravel 12.x** and **Laravel 13.x** (in addition to Laravel 11.x).
+- Full support for **Laravel 12.x** and **Laravel 13.x** alongside Laravel 11.x.
 - Added `phpstan/phpstan` (Level 6) for static type analysis.
 - Added `laravel/pint` code style enforcement with `pint.json` preset.
 - Added `phpunit.xml` configuration with in-memory SQLite test environment.
-- Added `phpstan.neon` configuration for static analysis.
 - Added `composer analyse` and `composer lint` scripts.
-- Upgraded GitHub Actions CI matrix to test all combinations of PHP 8.2/8.3 × Laravel 11/12/13 × prefer-lowest/prefer-stable.
-- Added separate CI jobs for Code Style (Pint) and Static Analysis (PHPStan).
-- Added `keywords` and `homepage` fields to `composer.json` for Packagist discoverability.
-- Added `orchestra/testbench ^10.0` and `phpunit/phpunit ^11.0` support in `require-dev`.
-- Added JavaScript `EventSource` streaming example in README.
-- Added runtime driver switching documentation in README.
-- Added full compatibility table in README (Laravel 11/12/13 × PHP 8.2/8.3).
-
-### Changed
-- Updated `composer.json` description to reflect multi-version Laravel support.
-- Updated `.gitattributes` to `export-ignore` new dev configuration files.
-- Improved README structure with feature table, compatibility matrix, and testing section.
+- Added GitHub Actions CI matrix for multi-version testing.
 
 ## [1.0.0] - 2026-05-19
 
 ### Added
 - Initial release of **Laravel NativeRAG** engine.
 - `NativeRagManager` extending Laravel `Manager` for multi-driver gateway support.
-- `OllamaDriver`: Full chat completions, SSE streaming, and embedding generation via Ollama local API.
+- `OllamaDriver`: Chat completions, SSE streaming, and embedding generation via Ollama local API.
 - `LmStudioDriver`: OpenAI-compatible chat completions and SSE streaming via LM Studio local API.
 - `ChatEngineContract` and `EmbeddingEngineContract` strict interfaces.
 - `ChatResponse` immutable readonly DTO for type-safe driver responses.
-- `NativeRagStreamResponse` for PSR-compliant Server-Sent Events with aggressive buffer flushing.
-- `VectorSearchEngine` with PHP Cosine Similarity matrix math and PostgreSQL pgvector fallback.
+- `NativeRagStreamResponse` for PSR-compliant Server-Sent Events.
+- `VectorSearchEngine` with cosine similarity math and PostgreSQL pgvector fallback.
 - `TextChunker` for overlapping context-preserving document chunking.
-- `PromptCompiler` with `{{placeholder}}` substitution and RAG-specific prompt templates.
+- `PromptCompiler` with `{{placeholder}}` substitution and RAG prompt templates.
 - `Embeddable` Eloquent trait for automatic model chunking and vector embedding sync on save.
 - `NativeRagConversation` and `NativeRagMessage` Eloquent models with UUID primary keys.
 - `NativeRagEmbedding` polymorphic Eloquent model with hash-based deduplication.
-- Database migrations for `nativerag_conversations`, `nativerag_messages`, and `nativerag_embeddings`.
-- `NativeRag` Facade for ergonomic static access.
-- `NativeRagServiceProvider` with config/migration publishing.
-- Full `config/nativerag.php` with env-driven driver, chunking, memory, and encryption options.
-- `LICENSE.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`.
-- GitHub Actions CI workflow.
-- [2020-01-20]: refactor: optimize vector database embedding queries
-- [2020-02-01]: docs: clarify local model setup steps in README
-- [2020-02-13]: chore: update composer dependencies for laravel
-- [2020-02-25]: style: format search index controller helpers
-- [2020-03-05]: docs: document index pipeline execution rules
-- [2020-03-14]: refactor: simplify query parsing logic
-- [2020-03-26]: fix: correct prompt builder variable bindings
-- [2020-04-04]: docs: document custom prompt templates usage
-- [2020-04-15]: chore: configure default embedding dimensions
-- [2020-04-26]: refactor: clean up chunking logic in files parser
-- [2020-05-06]: style: improve terminal indexing feedback layout
-- [2020-05-16]: docs: add hardware acceleration guide
-- [2020-05-27]: chore: update security rules in database guides
-- [2020-06-06]: refactor: optimize search score calculations
-- [2020-06-18]: docs: update deployment troubleshooting tips
-- [2020-06-29]: fix: resolve token counting edge cases
-- [2020-07-09]: refactor: streamline rag pipeline response structure
-- [2020-07-19]: docs: update environment configs for sqlite vector
-- [2020-07-31]: style: standardize embedding models configurations
-- [2020-08-10]: chore: update contribution guidelines in docs
-- [2020-08-20]: refactor: optimize vector database embedding queries
-- [2020-08-30]: docs: clarify local model setup steps in README
-- [2020-09-11]: chore: update composer dependencies for laravel
-- [2020-09-20]: style: format search index controller helpers
-- [2020-09-30]: docs: document index pipeline execution rules
-- [2020-10-11]: refactor: simplify query parsing logic
-- [2020-10-22]: fix: correct prompt builder variable bindings
-- [2020-11-02]: docs: document custom prompt templates usage
-- [2020-11-13]: chore: configure default embedding dimensions
-- [2020-11-25]: refactor: clean up chunking logic in files parser
-- [2020-12-04]: style: improve terminal indexing feedback layout
-- [2020-12-16]: docs: add hardware acceleration guide
-- [2020-12-26]: chore: update security rules in database guides
-- [2024-10-04]: refactor: optimize search score calculations
-- [2024-10-06]: docs: update deployment troubleshooting tips
-- [2024-10-09]: fix: resolve token counting edge cases
-- [2024-10-11]: refactor: streamline rag pipeline response structure
-- [2024-10-15]: docs: update environment configs for sqlite vector
-- [2024-10-19]: style: standardize embedding models configurations
-- [2024-10-23]: chore: update contribution guidelines in docs
-- [2024-10-26]: refactor: optimize vector database embedding queries
-- [2024-10-30]: docs: clarify local model setup steps in README
-- [2026-05-20]: feat: add semantic chunking strategy for long documents
-- [2026-05-20]: refactor: optimize embedding batch size for throughput
-- [2026-05-20]: docs: document local LLM integration with Ollama
+- Database migrations for conversations, messages, and embeddings.
+- `NativeRag` Facade for static access.

@@ -8,6 +8,9 @@ use Hamzi\NativeRag\Contracts\ChatEngineContract;
 use Hamzi\NativeRag\Contracts\EmbeddingEngineContract;
 use Hamzi\NativeRag\Drivers\LmStudioDriver;
 use Hamzi\NativeRag\Drivers\OllamaDriver;
+use Hamzi\NativeRag\Models\NativeRagEmbedding;
+use Hamzi\NativeRag\Services\VectorSearchEngine;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Manager;
 
 class NativeRagManager extends Manager
@@ -50,5 +53,23 @@ class NativeRagManager extends Manager
         }
 
         return $instance;
+    }
+
+    /**
+     * Perform a semantic vector search across indexed embeddings.
+     * Accepts either a pre-computed vector array or a raw query string.
+     *
+     * @param  string|array<float>  $query
+     * @return Collection<int, NativeRagEmbedding>
+     */
+    public function search(string|array $query, int $limit = 5, ?float $minScore = null): Collection
+    {
+        $vector = is_string($query)
+            ? $this->embedding()->embed($query)
+            : $query;
+
+        /** @var array<float> $vector */
+        return $this->container->make(VectorSearchEngine::class)
+            ->search($vector, $limit, $minScore);
     }
 }

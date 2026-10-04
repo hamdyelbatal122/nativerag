@@ -49,11 +49,18 @@ class EmbeddingService
         // Batch embed to minimize HTTP round-trips
         foreach (array_chunk($chunks, $this->batchSize) as $batch) {
             $vectors = $embedder->embed($batch);
+            $vectors = array_values($vectors);
 
             foreach ($batch as $index => $chunkContent) {
+                $vector = $vectors[$index] ?? null;
+
+                if (! is_array($vector)) {
+                    throw new \RuntimeException("Failed to generate embedding vector for chunk index {$index}.");
+                }
+
                 $model->embeddings()->create([
                     'chunk_content' => $chunkContent,
-                    'embedding' => $vectors[$index],
+                    'embedding' => $vector,
                     'hash' => $hash,
                 ]);
             }

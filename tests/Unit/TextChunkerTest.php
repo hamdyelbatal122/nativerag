@@ -62,4 +62,20 @@ class TextChunkerTest extends TestCase
             $this->assertLessThanOrEqual(500, strlen($chunk));
         }
     }
+
+    public function test_throws_exception_for_non_positive_chunk_size(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Chunk size must be greater than zero.');
+
+        $this->chunker->chunk('Some text', 0);
+    }
+
+    public function test_throws_exception_for_invalid_overlap(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Overlap must be non-negative and smaller than chunk size.');
+
+        $this->chunker->chunk('Some text', 100, 100);
+    }
 }
