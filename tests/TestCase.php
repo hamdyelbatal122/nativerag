@@ -11,6 +11,13 @@ use Orchestra\Testbench\TestCase as Orchestra;
 abstract class TestCase extends Orchestra
 {
     /**
+     * Compatibility property for orchestra/testbench-core v9.0 lowest versions.
+     *
+     * @var mixed
+     */
+    public static $latestResponse;
+
+    /**
      * @param  Application  $app
      * @return array<int, class-string>
      */
