@@ -1,6 +1,6 @@
 <p align="center">
-  <h1 align="center">Laravel NativeRAG</h1>
-  <p align="center">Local AI and Retrieval-Augmented Generation (RAG) engine for Laravel 11, 12, and 13</p>
+  <h1 align="center">🧠 Laravel NativeRAG</h1>
+  <p align="center">A privacy-first Local AI & Retrieval-Augmented Generation (RAG) engine for Laravel 11, 12, and 13</p>
 </p>
 
 <p align="center">
