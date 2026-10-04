@@ -4,78 +4,117 @@ All notable changes to `hamzi/nativerag` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.1] - 2026-10-04
+## [1.2.0] - 2026-10-04
 
 ### Added
-- Added `NativeRag::search()` helper method to `NativeRagManager` and the `NativeRag` facade for direct semantic search with raw text or vector embeddings.
-- Added `preserve_system_messages` option in `config/nativerag.php` to prevent system instructions from being pruned in long-running chats.
-- Added unit tests for encrypted payloads (`encrypt_payloads`) and system message preservation during history pruning.
+- Added `NativeRag::searchHybrid()` combining cosine vector similarity and keyword search via Reciprocal Rank Fusion (RRF).
+- Added `nativerag:health` Artisan command for diagnosing local AI driver connectivity, embedding dimensions, database statistics, and queue status.
+- Added `nativerag:index {model}` Artisan command with progress bar reporting, chunk batching, and forced re-indexing (`--force`) capabilities.
+- Added `SyncEmbeddingsJob` and `nativerag.queue` configuration to offload document chunking and vector generation to background queue workers.
+- Added `preserve_system_messages` option in `config/nativerag.php` to protect system instructions from being dropped during sliding-window conversation pruning.
+- Added payload encryption support (`encrypt_payloads`) for stored conversation messages and metadata.
+- Expanded automated unit test suite to 45 tests covering all drivers, commands, hybrid search, and queued jobs.
 
 ### Fixed
-- Fixed SQLite custom function registration in `VectorSearchEngine` to track registered PDO instances dynamically instead of using a global static boolean, avoiding missing function errors upon database reconnection.
-- Improved exception handling across `VectorSearchEngine` by catching `\Throwable` instead of `\Exception` to gracefully handle PDO driver errors and fall back to collection search.
-- Added HTTP failure checks (`throw()`) in `stream()` methods for both `OllamaDriver` and `LmStudioDriver` to surface connection errors promptly.
-- Added input validation in `TextChunker` for non-positive chunk size and invalid overlap parameters.
-- Cleaned up unneeded debug artifacts and unused properties in test fixtures.
+- Fixed SQLite custom function lifecycle in `VectorSearchEngine` by dynamically tracking registered PDO instances (`spl_object_id`) to avoid missing function errors upon database reconnection.
+- Hardened exception handling in `VectorSearchEngine` by catching `\Throwable` instead of `\Exception` to guarantee safe fallback to collection search.
+- Added failed HTTP response validation (`throw()`) in `stream()` methods for both `OllamaDriver` and `LmStudioDriver` to surface network and server failures promptly.
+- Fixed static `$latestResponse` compatibility property in base `TestCase` to maintain compatibility with `orchestra/testbench-core: v9.0.x` under `prefer-lowest`.
 
-## [1.1.0] - 2026-05-20
+## [1.1.0] - 2026-05-31
 
 ### Added
-- Support for LM Studio embeddings endpoint (`/v1/embeddings`).
-- Flexible memory pruning strategies: `count` (sliding window) and `token` (token threshold with fallback character approximation).
-- Batch embedding support in `EmbeddingService` to minimize HTTP round-trips when chunking large models.
-- Direct SQLite PDO function integration (`cosine_similarity`) for zero-dependency local vector math.
-- Configurable database connection for embeddings via `nativerag.embeddings.connection`.
+- Added LM Studio embedding driver integration via `/v1/embeddings`.
+- Added sliding-window memory pruning supporting both count-based and token-based strategies.
+- Added `EmbeddableContract` interface for type-safe model indexing.
+- Added connection abort detection during SSE streaming responses.
+- Added configurable database connection for embeddings via `nativerag.embeddings.connection`.
 
 ### Changed
-- Refactored embedding synchronization to use a dedicated `EmbeddingService` for cleaner architecture and separation of concerns.
-- Streamlined chat orchestration through `ConversationService`.
-- Enhanced static analysis coverage with PHPStan Level 6 and Pint styling.
+- Extracted `EmbeddingService` and `ConversationService` for clean architectural separation of concerns.
+- Optimized embedding synchronization to use batch requests and minimize HTTP round-trips.
+
+## [1.0.8] - 2026-05-20
+
+### Added
+- Added UTF-8 multi-byte string handling across `TextChunker` for reliable natural language segmentation.
+- Added native SQLite PDO `cosine_similarity` function registration for zero-dependency local vector queries.
+
+### Fixed
+- Improved natural sentence and paragraph boundary detection during document chunking.
+
+## [1.0.7] - 2026-05-19
+
+### Changed
+- Adjusted CI test matrix constraints to exclude PHP 8.2 with Laravel 13 to align with Laravel 13's PHP 8.3+ requirement.
+
+## [1.0.6] - 2026-05-19
+
+### Added
+- Added `phpunit.xml.dist` to repository for reproducible local test environments.
+
+### Fixed
+- Stabilized Composer dependency constraints for multi-version CI test execution.
+
+## [1.0.5] - 2026-05-19
+
+### Added
+- Added Orchestra Testbench `^11.0` support for Laravel 13 testing compatibility.
+- Added `$latestResponse` compatibility shim in test base class for older Testbench v9 installations.
+
+## [1.0.4] - 2026-05-19
+
+### Changed
+- Standardized docblock imports and type annotations across all classes.
+- Formatted entire codebase to comply fully with Laravel Pint rules.
 
 ## [1.0.3] - 2026-05-19
 
 ### Added
-- Added official support for **PHP 8.5** (`^8.2|^8.5` in `composer.json`).
-- Included **PHP 8.5** in the GitHub Actions CI matrix to test against Laravel 11/12/13.
-- Added comprehensive unit tests for `PackageInstallTest`, `TextChunkerTest`, and `PromptCompilerTest` using Orchestra Testbench.
+- Added official support for PHP 8.5 (`^8.2|^8.5` in `composer.json`).
+- Added PHP 8.5 to GitHub Actions CI matrix across Laravel 11, 12, and 13.
+- Added automated unit test suite for package installation, text chunking, and prompt compilation.
 
 ## [1.0.2] - 2026-05-19
 
 ### Fixed
-- Removed conflicting `protected $casts = [...]` property from `NativeRagConversation` that clashed with the `casts()` method in Laravel 11+.
-- Fixed `Embeddable::bootEmbeddable()` callbacks to use `self` type hint.
-- Optimized `syncEmbeddings()` to use a single `first()` check for hash comparison.
-- Fixed generic type hints: `HasMany<NativeRagMessage, $this>`, `BelongsTo<NativeRagConversation, $this>`, `MorphMany<NativeRagEmbedding, $this>` for PHPStan compliance.
-- Cast `config()` return values to `int` in `pruneHistory()` and `syncEmbeddings()` to prevent type coercion warnings in strict mode.
+- Removed conflicting `protected $casts` property from `NativeRagConversation` to rely on the canonical `casts()` method.
+- Corrected `Embeddable` boot callbacks to use `self` for accurate static resolution.
+- Optimized `syncEmbeddings()` hash check to use a single database query.
+- Fixed Eloquent relationship generic type hints for PHPStan compliance.
 
 ### Added
-- Full **PHP 8.4** support added to GitHub Actions CI matrix.
+- Added PHP 8.4 support to GitHub Actions CI matrix.
 
 ## [1.0.1] - 2026-05-19
 
 ### Added
-- Full support for **Laravel 12.x** and **Laravel 13.x** alongside Laravel 11.x.
-- Added `phpstan/phpstan` (Level 6) for static type analysis.
-- Added `laravel/pint` code style enforcement with `pint.json` preset.
-- Added `phpunit.xml` configuration with in-memory SQLite test environment.
-- Added `composer analyse` and `composer lint` scripts.
-- Added GitHub Actions CI matrix for multi-version testing.
+- Extended framework support to include Laravel 12.x and Laravel 13.x alongside Laravel 11.x.
+- Added PHPStan static analysis configuration at Level 6.
+- Added Laravel Pint code style preset and automated linting scripts.
+- Added GitHub Actions CI matrix covering multi-version matrix runs.
 
 ## [1.0.0] - 2026-05-19
 
 ### Added
-- Initial release of **Laravel NativeRAG** engine.
-- `NativeRagManager` extending Laravel `Manager` for multi-driver gateway support.
-- `OllamaDriver`: Chat completions, SSE streaming, and embedding generation via Ollama local API.
-- `LmStudioDriver`: OpenAI-compatible chat completions and SSE streaming via LM Studio local API.
-- `ChatEngineContract` and `EmbeddingEngineContract` strict interfaces.
-- `ChatResponse` immutable readonly DTO for type-safe driver responses.
-- `NativeRagStreamResponse` for PSR-compliant Server-Sent Events.
-- `VectorSearchEngine` with cosine similarity math and PostgreSQL pgvector fallback.
-- `TextChunker` for overlapping context-preserving document chunking.
-- `PromptCompiler` with `{{placeholder}}` substitution and RAG prompt templates.
-- `Embeddable` Eloquent trait for automatic model chunking and vector embedding sync on save.
-- `NativeRagConversation` and `NativeRagMessage` Eloquent models with UUID primary keys.
-- `NativeRagEmbedding` polymorphic Eloquent model with hash-based deduplication.
-- Database migrations for conversations, messages, and embeddings.
+- Initial release of Laravel NativeRAG.
+- Multi-driver LLM support for Ollama and LM Studio via Laravel's Manager pattern.
+- Zero-infrastructure vector search with cosine similarity calculation.
+- Real-time Server-Sent Events (SSE) streaming response handler.
+- Embeddable Eloquent model trait with automatic text chunking and indexing on save.
+- Persistent conversation and message models with UUID primary keys.
+- Optional payload encryption for stored chat messages and metadata.
+- Published configuration and database migration files.
 - `NativeRag` Facade for static access.
+
+[1.2.0]: https://github.com/hamdyelbatal122/nativerag/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.8...v1.1.0
+[1.0.8]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.7...v1.0.8
+[1.0.7]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.6...v1.0.7
+[1.0.6]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.5...v1.0.6
+[1.0.5]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.4...v1.0.5
+[1.0.4]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.3...v1.0.4
+[1.0.3]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.2...v1.0.3
+[1.0.2]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/hamdyelbatal122/nativerag/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/hamdyelbatal122/nativerag/releases/tag/v1.0.0
