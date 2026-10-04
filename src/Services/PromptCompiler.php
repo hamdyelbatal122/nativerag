@@ -35,7 +35,7 @@ class PromptCompiler
         $template = <<<'PROMPT'
 {{instruction}}
 
-You are a highly capable and intelligent assistant. Use ONLY the following provided context to answer the user's question. If the answer is not contained within the context, state that you do not have the information, and do not hallucinate an answer.
+Use the following context to answer the question. If the context does not contain the answer, state that you do not have enough information.
 
 <context>
 {{context}}

@@ -18,13 +18,10 @@ class ConversationService
      */
     public function ask(NativeRagConversation $conversation, string $userMessage, array $options = []): NativeRagMessage
     {
-        // 1. Add user message without pruning (we prune once at the end)
         $conversation->addUserMessage($userMessage, prune: false);
 
-        // 2. Compile full chat history for the driver
         $messages = $conversation->messagesForChat();
 
-        // 3. Request LLM response
         $driverName = $options['driver'] ?? null;
         $driver = NativeRag::driver($driverName);
 
@@ -32,7 +29,6 @@ class ConversationService
 
         $chatResponse = $driver->chat($messages, $options);
 
-        // 4. Add assistant response and prune once
         return $conversation->addAssistantMessage(
             content: $chatResponse->content,
             tokens: $chatResponse->completionTokens

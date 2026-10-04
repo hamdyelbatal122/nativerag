@@ -42,7 +42,6 @@ class VectorSearchEngine
     {
         $results = collect();
 
-        // Use cursor to avoid loading all large JSON embeddings into memory at once
         foreach (NativeRagEmbedding::query()->cursor() as $record) {
             $recordEmbedding = $record->embedding;
 
@@ -53,7 +52,6 @@ class VectorSearchEngine
             $score = $this->cosineSimilarity($queryEmbedding, $recordEmbedding);
 
             if ($score >= $minScore) {
-                // Attach dynamic similarity score
                 $record->setAttribute('similarity', $score);
                 $results->push($record);
             }
@@ -75,14 +73,12 @@ class VectorSearchEngine
         $connection = DB::connection(config('nativerag.embeddings.connection'));
         $driver = $connection->getDriverName();
 
-        // Postgres pgvector support if available
         if ($driver === 'pgsql') {
             $vectorStr = '['.implode(',', $queryEmbedding).']';
 
             try {
                 /** @var Collection<int, NativeRagEmbedding> $results */
                 $results = NativeRagEmbedding::query()
-                    // 1 - (embedding <=> query) = cosine similarity in pgvector
                     ->selectRaw('*, 1 - (embedding <=> ?) as similarity', [$vectorStr])
                     ->whereRaw('1 - (embedding <=> ?) >= ?', [$vectorStr, $minScore])
                     ->orderByDesc('similarity')
@@ -91,12 +87,10 @@ class VectorSearchEngine
 
                 return $results;
             } catch (\Throwable $e) {
-                // Fallback to PHP computation if pgvector extension is missing
                 return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
             }
         }
 
-        // SQLite native support using PDO custom functions
         if ($driver === 'sqlite') {
             try {
                 $pdo = $connection->getPdo();
@@ -130,7 +124,6 @@ class VectorSearchEngine
             }
         }
 
-        // For other databases without native vector extensions, use the collection strategy
         return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
     }
 

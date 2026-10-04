@@ -101,9 +101,6 @@ class VectorSearchTest extends TestCase
     {
         config(['nativerag.embeddings.search_strategy' => 'collection']);
 
-        // Insert manually mock embeddings
-        // Vector A: [1.0, 0.0]
-        // Vector B: [0.0, 1.0]
         NativeRagEmbedding::create([
             'embeddable_type' => 'App\\Models\\Dummy',
             'embeddable_id' => '1',
@@ -122,10 +119,9 @@ class VectorSearchTest extends TestCase
 
         $engine = new VectorSearchEngine;
 
-        // Search closest to Vector A: [1.0, 0.0]
         $results = $engine->search([1.0, 0.0], limit: 2, minScore: 0.1);
 
-        $this->assertCount(1, $results); // Vector B similarity is 0.0, which is < minScore (0.1)
+        $this->assertCount(1, $results);
         $this->assertSame('Content matching Vector A', $results[0]->chunk_content);
         $this->assertEqualsWithDelta(1.0, $results[0]->similarity, 0.001);
     }
@@ -152,7 +148,6 @@ class VectorSearchTest extends TestCase
 
         $engine = new VectorSearchEngine;
 
-        // Search closest to Vector B: [0.0, 1.0, 0.0]
         $results = $engine->search([0.0, 1.0, 0.0], limit: 5, minScore: 0.0);
 
         $this->assertCount(2, $results);
@@ -175,12 +170,10 @@ class VectorSearchTest extends TestCase
             'hash' => 'hash_1',
         ]);
 
-        // 1. Search directly with vector
         $vectorResults = NativeRag::search([0.9, 0.1], limit: 1);
         $this->assertCount(1, $vectorResults);
         $this->assertSame('Laravel package development', $vectorResults[0]->chunk_content);
 
-        // 2. Search with raw text query (auto-embeds)
         Http::fake([
             'http://localhost:11434/api/embed' => Http::response([
                 'embeddings' => [

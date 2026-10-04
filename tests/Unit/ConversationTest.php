@@ -100,21 +100,12 @@ class ConversationTest extends TestCase
 
         $conversation = NativeRagConversation::create();
 
-        // 12 chars = ~3 tokens
         $conversation->addMessage('user', 'Hello world!');
-        // 12 chars = ~3 tokens (total ~6 tokens)
         $conversation->addMessage('assistant', 'How are you?');
-        // 40 chars = ~10 tokens (total ~16 tokens, exceeds 10)
         $conversation->addMessage('user', 'I am doing exceptionally well today, thank you.');
 
         $messages = $conversation->messages()->oldest()->get();
 
-        // Should prune oldest messages.
-        // The last message is 10 tokens. The previous message is 3 tokens.
-        // Summing from latest:
-        // 'I am doing...' = 10 tokens.
-        // 'How are you?' = 3 tokens (10 + 3 = 13 > 10, so it should prune this and Hello world)
-        // Wait, since 'I am doing...' is 10 tokens, and we allow keeping the latest message.
         $this->assertCount(1, $messages);
         $this->assertSame('I am doing exceptionally well today, thank you.', $messages[0]->content);
     }
