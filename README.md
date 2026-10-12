@@ -1,6 +1,6 @@
 <p align="center">
-  <h1 align="center">🧠 Laravel NativeRAG</h1>
-  <p align="center">A privacy-first Local AI & Retrieval-Augmented Generation (RAG) engine for Laravel 11, 12, and 13</p>
+  <h1 align="center">Laravel NativeRAG</h1>
+  <p align="center">Local retrieval-augmented generation tools for Laravel applications</p>
 </p>
 
 <p align="center">
@@ -14,21 +14,21 @@
 
 ---
 
-**NativeRAG** allows you to run localized, privacy-first AI workflows using models hosted in [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/) directly from your Laravel application.
+**NativeRAG** connects Laravel applications to local chat and embedding models hosted in [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/).
 
-No external cloud API keys and no third-party vector databases. All inference and embeddings remain on your infrastructure.
+It stores document chunks, embeddings, and conversations in your application database, so small RAG workflows can run without a separate vector service.
 
 ---
 
 ## Features
 
-- **Multi-Driver Support:** Switch between Ollama and LM Studio via Laravel's Manager pattern.
-- **Embedded Vector Search:** Cosine similarity search powered by SQLite PDO custom functions, PostgreSQL pgvector, or PHP collection math.
-- **SSE Streaming:** Real-time token streaming responses ready for Alpine.js, Livewire, or frontend clients.
-- **Automatic Model Indexing:** `Embeddable` trait for Eloquent models with automatic chunking and hash-based deduplication on save.
-- **Persistent Conversations:** Multi-turn chat persistence with sliding-window history pruning and system prompt preservation.
-- **Encrypted Storage:** Optional AES-256 payload encryption for stored messages and metadata using your application key.
-- **Type Safety:** PHP 8.2+ with strict types, readonly DTOs, and PHPStan Level 6 static analysis.
+- Switch between Ollama and LM Studio using Laravel's manager pattern.
+- Store embeddings in the application database and search them with SQLite or PHP-side cosine similarity.
+- Stream chat responses over server-sent events.
+- Add automatic chunking and embedding sync to Eloquent models with the `Embeddable` trait.
+- Persist conversation history with count-based or token-based pruning.
+- Optionally encrypt stored conversation content and metadata.
+- Run on PHP 8.2+ with PHPUnit, Pint, and PHPStan configuration included.
 
 ---
 

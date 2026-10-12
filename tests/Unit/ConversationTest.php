@@ -128,6 +128,25 @@ class ConversationTest extends TestCase
         $this->assertSame('Message 3', $messages[1]->content);
     }
 
+    public function test_token_pruning_keeps_latest_non_system_message_when_system_prompt_exceeds_budget(): void
+    {
+        config(['nativerag.conversations.pruning_strategy' => 'token']);
+        config(['nativerag.conversations.max_tokens_threshold' => 5]);
+        config(['nativerag.conversations.preserve_system_messages' => true]);
+
+        $conversation = NativeRagConversation::create();
+
+        $conversation->addMessage('system', 'Long system prompt', null, 20);
+        $conversation->addMessage('user', 'First message', null, 5);
+        $conversation->addMessage('assistant', 'Second message', null, 5);
+
+        $messages = $conversation->messages()->oldest()->get();
+
+        $this->assertCount(2, $messages);
+        $this->assertSame('system', $messages[0]->role);
+        $this->assertSame('Second message', $messages[1]->content);
+    }
+
     public function test_ask_method_communicates_with_driver_and_stores_response(): void
     {
         $conversation = NativeRagConversation::create();

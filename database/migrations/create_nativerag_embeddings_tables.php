@@ -21,13 +21,11 @@ return new class extends Migration
                 $table->string('embeddable_type');
                 $table->string('embeddable_id');
                 $table->longText('chunk_content');
-                $table->json('embedding'); // Store raw floating-point array
-                $table->string('hash', 64); // MD5/SHA-256 for chunk deduplication
+                $table->json('embedding');
+                $table->string('hash', 64);
                 $table->timestamps();
 
-                // Polymorphic lookup index
                 $table->index(['embeddable_type', 'embeddable_id']);
-                // Deduplication query index
                 $table->index('hash');
             });
         }

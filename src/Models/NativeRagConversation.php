@@ -25,11 +25,7 @@ class NativeRagConversation extends Model
         return config('nativerag.conversations.table_conversations', 'nativerag_conversations');
     }
 
-    /**
-     * Use the casts() method (Laravel 11+) — do NOT combine with a $casts property.
-     *
-     * @return array<string, string>
-     */
+    /** @return array<string, string> */
     protected function casts(): array
     {
         if (config('nativerag.conversations.encrypt_payloads', false)) {
@@ -51,9 +47,6 @@ class NativeRagConversation extends Model
         return $this->hasMany(NativeRagMessage::class, 'conversation_id');
     }
 
-    /**
-     * Prune old messages according to the configured strategy.
-     */
     public function pruneHistory(): void
     {
         $strategy = config('nativerag.conversations.pruning_strategy', 'count');
@@ -88,13 +81,13 @@ class NativeRagConversation extends Model
             $maxTokens = (int) config('nativerag.conversations.max_tokens_threshold', 4096);
             $totalTokens = 0;
             $idsToKeep = [];
+            $keptNonSystemMessage = false;
 
             if ($preserveSystem) {
                 $systemMessages = $this->messages()->where('role', 'system')->get();
-                foreach ($systemMessages as $sysMsg) {
-                    $sysTokens = $sysMsg->tokens ?? (int) ceil(mb_strlen($sysMsg->content, 'UTF-8') / 4);
-                    $idsToKeep[] = $sysMsg->id;
-                    $totalTokens += $sysTokens;
+                foreach ($systemMessages as $message) {
+                    $idsToKeep[] = $message->id;
+                    $totalTokens += $this->messageTokenCount($message);
                 }
             }
 
@@ -105,12 +98,12 @@ class NativeRagConversation extends Model
             $messages = $messagesQuery->latest()->get();
 
             foreach ($messages as $message) {
-                $msgTokens = $message->tokens ?? (int) ceil(mb_strlen($message->content, 'UTF-8') / 4);
+                $messageTokens = $this->messageTokenCount($message);
 
-                // Keep message if it fits within token budget or if no non-system message kept yet
-                if (empty($idsToKeep) || ($totalTokens + $msgTokens) <= $maxTokens) {
+                if (! $keptNonSystemMessage || ($totalTokens + $messageTokens) <= $maxTokens) {
                     $idsToKeep[] = $message->id;
-                    $totalTokens += $msgTokens;
+                    $totalTokens += $messageTokens;
+                    $keptNonSystemMessage = true;
                 } else {
                     break;
                 }
@@ -122,11 +115,12 @@ class NativeRagConversation extends Model
         }
     }
 
-    /**
-     * Add a message to the conversation.
-     *
-     * @param  array<string, mixed>|null  $metadata
-     */
+    protected function messageTokenCount(NativeRagMessage $message): int
+    {
+        return $message->tokens ?? (int) ceil(mb_strlen($message->content, 'UTF-8') / 4);
+    }
+
+    /** @param  array<string, mixed>|null  $metadata */
     public function addMessage(string $role, string $content, ?array $metadata = null, ?int $tokens = null, bool $prune = true): NativeRagMessage
     {
         /** @var NativeRagMessage $message */
@@ -144,31 +138,19 @@ class NativeRagConversation extends Model
         return $message;
     }
 
-    /**
-     * Add a system message to the conversation.
-     *
-     * @param  array<string, mixed>|null  $metadata
-     */
+    /** @param  array<string, mixed>|null  $metadata */
     public function addSystemMessage(string $content, ?array $metadata = null): NativeRagMessage
     {
         return $this->addMessage('system', $content, $metadata);
     }
 
-    /**
-     * Add a user message to the conversation.
-     *
-     * @param  array<string, mixed>|null  $metadata
-     */
+    /** @param  array<string, mixed>|null  $metadata */
     public function addUserMessage(string $content, ?array $metadata = null, bool $prune = true): NativeRagMessage
     {
         return $this->addMessage('user', $content, $metadata, null, $prune);
     }
 
-    /**
-     * Add an assistant message to the conversation.
-     *
-     * @param  array<string, mixed>|null  $metadata
-     */
+    /** @param  array<string, mixed>|null  $metadata */
     public function addAssistantMessage(string $content, ?array $metadata = null, ?int $tokens = null, bool $prune = true): NativeRagMessage
     {
         return $this->addMessage('assistant', $content, $metadata, $tokens, $prune);
@@ -187,12 +169,7 @@ class NativeRagConversation extends Model
             ->toArray();
     }
 
-    /**
-     * Send a new user message to the AI engine, retrieve the response,
-     * save both to the database, and return the assistant response message.
-     *
-     * @param  array<string, mixed>  $options
-     */
+    /** @param  array<string, mixed>  $options */
     public function ask(string $userMessage, array $options = []): NativeRagMessage
     {
         return app(ConversationService::class)->ask($this, $userMessage, $options);

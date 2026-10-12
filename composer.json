@@ -1,6 +1,6 @@
 {
     "name": "hamzi/nativerag",
-    "description": "A production-ready, privacy-first Local AI Controller and Retrieval-Augmented Generation (RAG) engine for Laravel 11, 12, and 13. Supports Ollama, LM Studio, zero-infra vector search, SSE streaming, and full conversational memory — all with 100% data residency.",
+    "description": "Local retrieval-augmented generation tools for Laravel applications using Ollama or LM Studio.",
     "type": "library",
     "license": "MIT",
     "keywords": [

@@ -13,12 +13,7 @@ class VectorSearchEngine
     /** @var array<int, bool> */
     protected static array $registeredPdoIds = [];
 
-    /**
-     * Search the database for the most similar chunks based on the provided embedding vector.
-     *
-     * @param  array<float>|array<int, float>  $queryEmbedding
-     * @return Collection<int, NativeRagEmbedding>
-     */
+    /** @param  array<float>|array<int, float>  $queryEmbedding */
     public function search(array $queryEmbedding, int $limit = 5, ?float $minScore = null): Collection
     {
         $strategy = config('nativerag.embeddings.search_strategy', 'database');
@@ -31,13 +26,7 @@ class VectorSearchEngine
         return $this->searchViaCollection($queryEmbedding, $limit, $minScore);
     }
 
-    /**
-     * Portable mathematical calculation pulling embeddings into a lazy collection and scoring via PHP.
-     * Compatible across any database driver (SQLite, MySQL, SQL Server) without special extensions.
-     *
-     * @param  array<float>  $queryEmbedding
-     * @return Collection<int, NativeRagEmbedding>
-     */
+    /** @param  array<float>  $queryEmbedding */
     protected function searchViaCollection(array $queryEmbedding, int $limit, float $minScore): Collection
     {
         $results = collect();
@@ -60,14 +49,7 @@ class VectorSearchEngine
         return $results->sortByDesc('similarity')->take($limit)->values();
     }
 
-    /**
-     * Database queries mapping cosine similarity math to SQL.
-     * Uses pgvector on PostgreSQL and custom PDO functions on SQLite,
-     * falling back to PHP collection calculation if needed.
-     *
-     * @param  array<float>  $queryEmbedding
-     * @return Collection<int, NativeRagEmbedding>
-     */
+    /** @param  array<float>  $queryEmbedding */
     protected function searchViaDatabase(array $queryEmbedding, int $limit, float $minScore): Collection
     {
         $connection = DB::connection(config('nativerag.embeddings.connection'));
@@ -128,16 +110,18 @@ class VectorSearchEngine
     }
 
     /**
-     * Compute Cosine Similarity between two arrays of floats.
-     * Returns a score between -1.0 and 1.0 (1.0 meaning exact match).
-     *
      * @param  array<float>  $a
      * @param  array<float>  $b
      */
     protected function cosineSimilarity(array $a, array $b): float
     {
-        $count = min(count($a), count($b));
+        $count = count($a);
+
         if ($count === 0) {
+            return 0.0;
+        }
+
+        if ($count !== count($b)) {
             return 0.0;
         }
 
@@ -161,12 +145,7 @@ class VectorSearchEngine
         return $dotProduct / (sqrt($normA) * sqrt($normB));
     }
 
-    /**
-     * Perform hybrid search combining vector similarity and keyword search via Reciprocal Rank Fusion (RRF).
-     *
-     * @param  array<float>  $queryEmbedding
-     * @return Collection<int, NativeRagEmbedding>
-     */
+    /** @param  array<float>  $queryEmbedding */
     public function searchHybrid(array $queryEmbedding, string $queryText, int $limit = 5, ?float $minScore = null, int $rrfK = 60): Collection
     {
         $candidateLimit = max($limit * 3, 20);

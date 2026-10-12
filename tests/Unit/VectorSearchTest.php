@@ -129,6 +129,32 @@ class VectorSearchTest extends TestCase
         $this->assertEqualsWithDelta(1.0, $results[0]->similarity, 0.001);
     }
 
+    public function test_collection_search_ignores_vectors_with_mismatched_dimensions(): void
+    {
+        config(['nativerag.embeddings.search_strategy' => 'collection']);
+
+        NativeRagEmbedding::create([
+            'embeddable_type' => 'App\\Models\\Dummy',
+            'embeddable_id' => '1',
+            'chunk_content' => 'Wrong dimensions',
+            'embedding' => [1.0],
+            'hash' => 'hash_wrong_dimensions',
+        ]);
+
+        NativeRagEmbedding::create([
+            'embeddable_type' => 'App\\Models\\Dummy',
+            'embeddable_id' => '2',
+            'chunk_content' => 'Correct dimensions',
+            'embedding' => [1.0, 0.0],
+            'hash' => 'hash_correct_dimensions',
+        ]);
+
+        $results = (new VectorSearchEngine)->search([1.0, 0.0], limit: 5, minScore: 0.1);
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Correct dimensions', $results[0]->chunk_content);
+    }
+
     public function test_vector_search_engine_database_strategy_sqlite(): void
     {
         config(['nativerag.embeddings.search_strategy' => 'database']);
